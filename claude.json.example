@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "scientific-papers": {
+      "command": "python",
+      "args": ["-m", "src"],
+      "cwd": "D:\\Claude Code\\scientific-papers-mcp",
+      "env": {
+        "PYTHONPATH": "D:\\Claude Code\\scientific-papers-mcp"
+      }
+    }
+  }
+}

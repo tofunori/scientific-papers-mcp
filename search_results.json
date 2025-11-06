@@ -1,0 +1,77 @@
+[
+  {
+    "query": "glacier albedo feedback",
+    "alpha": 0.5,
+    "num_results": 2,
+    "results": [
+      {
+        "doc_id": "Naegeli_et_al_2019_Bare_Ice_Albedo_Swiss_Alps.md-1",
+        "score": 0.9418835411522685,
+        "title": "Change Detection of Bare-Ice Albedo in the Swiss Alps",
+        "authors": "Kathrin Naegeli¹, ², Matthias Huss³, ⁴, Martin Hoelzle³",
+        "year": "2019",
+        "text_length": 1740,
+        "text_preview": "## Abstract  \nAlbedo feedback is an important driver of glacier melt over **bare-ice surfaces**. Light-absorbing impurities strongly enhance glacier melt rates but their abundance, composition and var"
+      },
+      {
+        "doc_id": "Johnson_Rupper_2020_AlbedoFeedback.md-1",
+        "score": 0.5134643074132723,
+        "title": "An Examination of Physical Processes That Trigger the Albedo-Feedback on Glacier Surfaces and Implications for Regional Glacier Mass Balance Across High Mountain Asia",
+        "authors": "Eric Johnson*, Summer Rupper",
+        "year": "2020",
+        "text_length": 2410,
+        "text_preview": "## Abstract  \nDue to their high sensitivity to changes in climate, glaciers are one of the best natural indicators of climate change. Despite this, many underlying processes that control glacier respo"
+      }
+    ]
+  },
+  {
+    "query": "black carbon aerosol",
+    "alpha": 0.6,
+    "num_results": 2,
+    "results": [
+      {
+        "doc_id": "Bond_et_al_2013_Chapters_1_and_2.md-13",
+        "score": 0.6475353437410454,
+        "title": "Bounding the Role of Black Carbon in the Climate System: A Scientific Assessment",
+        "authors": "T. C. Bond, University of Illinois at Urbana-Champaign, Urbana, IL, USA (yark@uiuc.edu)",
+        "year": "2013",
+        "text_length": 1707,
+        "text_preview": "### 2.1. What Is Black Carbon?  \n**Black carbon** is a distinct type of carbonaceous material, formed only in flames during combustion of carbon-based fuels. It is distinguishable from other forms of "
+      },
+      {
+        "doc_id": "Bond_et_al_2013_Chapters_1_and_2.md-3",
+        "score": 0.5181082370181618,
+        "title": "Bounding the Role of Black Carbon in the Climate System: A Scientific Assessment",
+        "authors": "T. C. Bond, University of Illinois at Urbana-Champaign, Urbana, IL, USA (yark@uiuc.edu)",
+        "year": "2013",
+        "text_length": 2501,
+        "text_preview": "## Abstract  \n**Black carbon** aerosol plays a unique and important role in Earth's climate system. This assessment provides a comprehensive evaluation of black-carbon climate forcing that encompasses"
+      }
+    ]
+  },
+  {
+    "query": "climate change impact",
+    "alpha": 0.7,
+    "num_results": 2,
+    "results": [
+      {
+        "doc_id": "Johnson_Rupper_2020_AlbedoFeedback.md-26",
+        "score": 0.5924213776420622,
+        "title": "An Examination of Physical Processes That Trigger the Albedo-Feedback on Glacier Surfaces and Implications for Regional Glacier Mass Balance Across High Mountain Asia",
+        "authors": "Eric Johnson*, Summer Rupper",
+        "year": "2020",
+        "text_length": 203,
+        "text_preview": "## Data Availability Statement  \nPublicly available datasets were analyzed in this study. This data can be found here: https://www.klima.tu-berlin.de/index.php?show=forschung_asien_tibet_har&lan=en  \n"
+      },
+      {
+        "doc_id": "Bond_et_al_2013_Chapters_5_and_6.md-2",
+        "score": 0.5923436885762599,
+        "title": "Bounding the Role of Black Carbon in the Climate System",
+        "authors": "Unknown",
+        "year": "2005",
+        "text_length": 1145,
+        "text_preview": "### 5.2. Introduction  \n**The impact of BC on climate** depends on its atmospheric abundance. Aerosol concentrations vary in space and time, and coverage by observations is insufficient to capture all"
+      }
+    ]
+  }
+]

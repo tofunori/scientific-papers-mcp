@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scientific-papers-mcp"
+version = "0.1.0"
+description = "MCP server for semantic search in scientific papers with hybrid search (semantic + keyword)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+
+dependencies = [
+    # MCP Framework
+    "fastmcp>=0.2.0",
+
+    # Vector DB - Updated to latest stable version (1.3.3)
+    "chromadb>=1.3.3",
+
+    # Embeddings & Search
+    "sentence-transformers>=2.7.0",
+    "rank-bm25>=0.2.2",
+
+    # LangChain for chunking
+    "langchain>=0.2.0",
+    "langchain-experimental>=0.0.60",
+
+    # Utils
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "watchdog>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+]
+
+dev-all = [
+    "scientific-papers-mcp[dev]",
+]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
