@@ -9,7 +9,7 @@ class Config(BaseSettings):
     """Application configuration loaded from environment variables"""
 
     # Paths
-    documents_path: Path = Path("D:/Github/Revue-de-litterature---Maitrise/Articles")
+    documents_path: Path = Path("C:/Users/thier/Zotero/storage")
     chroma_path: Path = Path("D:/Claude Code/scientific-papers-mcp/data/chroma")
 
     # Search settings
