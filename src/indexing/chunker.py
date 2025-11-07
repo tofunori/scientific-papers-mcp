@@ -121,6 +121,95 @@ class ScientificPaperChunker:
                 )
             ]
 
+    def chunk_pdf_document(self, text: str, document_id: str) -> List[DocumentChunk]:
+        """
+        Chunk a PDF document (text without markdown structure)
+
+        For PDFs, we rely on paragraph breaks and sentence splitting
+        since PDFs don't have markdown headers.
+
+        Args:
+            text: Full text of the PDF document
+            document_id: Unique identifier for the document
+
+        Returns:
+            List of DocumentChunk objects
+        """
+        chunks = []
+
+        try:
+            # Step 1: Split by paragraphs (double newlines)
+            paragraphs = text.split("\n\n")
+
+            chunk_num = 0
+            current_section = "Introduction"  # Default section name
+
+            for i, paragraph in enumerate(paragraphs):
+                paragraph = paragraph.strip()
+                if not paragraph:
+                    continue
+
+                # Detect section headers (single lines followed by double newline)
+                if len(paragraph.split("\n")) == 1 and len(paragraph) < 100:
+                    # Might be a section header
+                    if any(
+                        keyword in paragraph.lower()
+                        for keyword in [
+                            "abstract",
+                            "introduction",
+                            "method",
+                            "results",
+                            "discussion",
+                            "conclusion",
+                            "references",
+                        ]
+                    ):
+                        current_section = paragraph
+                        continue
+
+                # Step 2: If paragraph is too large, split further
+                if self._count_tokens(paragraph) > self.max_chunk_size:
+                    sub_chunks = self._split_large_chunk(paragraph)
+
+                    for sub_text in sub_chunks:
+                        chunk = DocumentChunk(
+                            text=sub_text.strip(),
+                            chunk_id=f"{document_id}-{chunk_num}",
+                            section=current_section,
+                            document_id=document_id,
+                            chunk_num=chunk_num,
+                        )
+                        if chunk.text:
+                            chunks.append(chunk)
+                            chunk_num += 1
+                else:
+                    chunk = DocumentChunk(
+                        text=paragraph,
+                        chunk_id=f"{document_id}-{chunk_num}",
+                        section=current_section,
+                        document_id=document_id,
+                        chunk_num=chunk_num,
+                    )
+                    if chunk.text:
+                        chunks.append(chunk)
+                        chunk_num += 1
+
+            logger.info(f"Chunked PDF '{document_id}' into {len(chunks)} chunks")
+            return chunks
+
+        except Exception as e:
+            logger.error(f"Error chunking PDF '{document_id}': {e}")
+            # Fallback: return entire document as one chunk
+            return [
+                DocumentChunk(
+                    text=text,
+                    chunk_id=f"{document_id}-0",
+                    section="full_document",
+                    document_id=document_id,
+                    chunk_num=0,
+                )
+            ]
+
     def _count_tokens(self, text: str) -> int:
         """
         Approximate token count (words ≈ 1.3 tokens)

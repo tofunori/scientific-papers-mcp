@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Config(BaseSettings):
@@ -29,10 +30,11 @@ class Config(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False
+    )
 
     def validate_paths(self) -> None:
         """Validate that required paths exist"""

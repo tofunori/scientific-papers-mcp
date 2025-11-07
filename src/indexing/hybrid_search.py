@@ -30,9 +30,8 @@ class HybridSearchEngine:
         self.collection = chroma_collection
         self.embedding_model_name = embedding_model or config.embedding_model
 
-        # Load embedding model
-        logger.info(f"Loading embedding model: {self.embedding_model_name}")
-        self.embedding_model = SentenceTransformer(self.embedding_model_name)
+        # Lazy load embedding model (loaded on first use)
+        self.embedding_model = None
 
         # BM25 index (will be built during indexing)
         self.bm25_index = None
@@ -40,10 +39,10 @@ class HybridSearchEngine:
         self.doc_ids = []  # Corresponding document IDs
         self.doc_texts = {}  # Full text of documents
 
-        # Load existing data from Chroma
-        self._load_from_chroma()
+        # Lazy loading flag for BM25 index
+        self._bm25_loaded = False
 
-        logger.info("Hybrid search engine initialized")
+        logger.info("Hybrid search engine initialized (lazy loading enabled)")
 
     def _load_from_chroma(self) -> None:
         """Load existing documents from Chroma into the BM25 index"""
@@ -80,6 +79,27 @@ class HybridSearchEngine:
         except Exception as e:
             logger.warning(f"Erreur lors du chargement de Chroma: {e}")
 
+    def _ensure_model_loaded(self) -> None:
+        """
+        Lazy loading: Charge le modèle d'embedding seulement si nécessaire.
+        Le modèle reste en mémoire après le premier chargement.
+        """
+        if self.embedding_model is None:
+            logger.info(f"Loading embedding model (lazy): {self.embedding_model_name}")
+            self.embedding_model = SentenceTransformer(self.embedding_model_name)
+            logger.info("Embedding model loaded successfully")
+
+    def _ensure_bm25_loaded(self) -> None:
+        """
+        Lazy loading: Charge l'index BM25 seulement si nécessaire.
+        L'index reste en mémoire après le premier chargement.
+        """
+        if not self._bm25_loaded:
+            logger.info("Loading BM25 index from Chroma (lazy)...")
+            self._load_from_chroma()
+            self._bm25_loaded = True
+            logger.info(f"BM25 index loaded successfully ({len(self.doc_ids)} documents)")
+
     def index_document(
         self, doc_id: str, text: str, metadata: dict = None
     ) -> None:
@@ -96,6 +116,12 @@ class HybridSearchEngine:
             return
 
         try:
+            # Ensure embedding model is loaded
+            self._ensure_model_loaded()
+
+            # Ensure BM25 index is loaded
+            self._ensure_bm25_loaded()
+
             # 1. Dense embedding for Chroma
             embedding = self.embedding_model.encode(text, convert_to_tensor=False)
 
@@ -127,6 +153,7 @@ class HybridSearchEngine:
         top_k: int = 10,
         alpha: float = 0.5,
         where_filter: Optional[Dict] = None,
+        where_document: Optional[Dict] = None,
     ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
         """
         Perform hybrid search combining semantic and keyword matching
@@ -137,6 +164,8 @@ class HybridSearchEngine:
             alpha: Balance between semantic (1.0) and keyword (0.0) search
                   0.0 = pure keyword, 1.0 = pure semantic, 0.5 = balanced
             where_filter: Optional metadata filter for Chroma
+            where_document: Optional document content filter for full text search
+                          Supports: $contains, $not_contains, $regex, $and, $or
 
         Returns:
             Tuple of (document_ids, scores, metadatas, documents)
@@ -147,9 +176,12 @@ class HybridSearchEngine:
         logger.info(f"Search query: '{query}' (alpha={alpha}, top_k={top_k})")
 
         try:
+            # Ensure BM25 index is loaded for keyword search
+            self._ensure_bm25_loaded()
+
             # Step 1: Dense semantic search
             dense_results = self._semantic_search(
-                query, top_k=top_k * 2, where_filter=where_filter
+                query, top_k=top_k * 2, where_filter=where_filter, where_document=where_document
             )
 
             # Step 2: Sparse keyword search (BM25)
@@ -168,7 +200,7 @@ class HybridSearchEngine:
             return [], [], [], []
 
     def _semantic_search(
-        self, query: str, top_k: int = 20, where_filter: Optional[Dict] = None
+        self, query: str, top_k: int = 20, where_filter: Optional[Dict] = None, where_document: Optional[Dict] = None
     ) -> Dict:
         """
         Semantic search using dense vectors
@@ -177,11 +209,15 @@ class HybridSearchEngine:
             query: Search query
             top_k: Number of results
             where_filter: Optional metadata filter
+            where_document: Optional document content filter
 
         Returns:
             Results dictionary from Chroma
         """
         try:
+            # Ensure embedding model is loaded
+            self._ensure_model_loaded()
+
             # Encode query
             query_embedding = self.embedding_model.encode(
                 query, convert_to_tensor=False
@@ -192,6 +228,7 @@ class HybridSearchEngine:
                 query_embeddings=[query_embedding.tolist()],
                 n_results=top_k,
                 where=where_filter,
+                where_document=where_document,
                 include=["documents", "metadatas", "distances"],
             )
 

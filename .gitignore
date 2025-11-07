@@ -39,8 +39,10 @@ env/
 
 # Data & Logs
 data/chroma/
+.chroma/
 logs/
 *.log
+search_results.json
 
 # Environment
 .env

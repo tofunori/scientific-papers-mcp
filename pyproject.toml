@@ -14,8 +14,8 @@ dependencies = [
     # MCP Framework
     "fastmcp>=0.2.0",
 
-    # Vector DB - Updated to latest stable version (1.3.3)
-    "chromadb>=1.3.3",
+    # Vector DB - Updated to latest stable version (1.3.4)
+    "chromadb>=1.3.4",
 
     # Embeddings & Search
     "sentence-transformers>=2.7.0",
@@ -25,11 +25,18 @@ dependencies = [
     "langchain>=0.2.0",
     "langchain-experimental>=0.0.60",
 
+    # PDF extraction with OCR support
+    "pymupdf>=1.24.0",
+    "pytesseract>=0.3.10",
+
     # Utils
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
     "watchdog>=4.0.0",
 ]
+
+[project.scripts]
+scientific-papers-mcp = "src.server:main"
 
 [project.optional-dependencies]
 dev = [

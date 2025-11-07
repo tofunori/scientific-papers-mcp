@@ -1,4 +1,4 @@
-"""Metadata extraction from markdown documents"""
+"""Metadata extraction from markdown and PDF documents"""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -52,37 +52,39 @@ class DocumentMetadata:
 
 
 class MetadataExtractor:
-    """Extract metadata from markdown scientific documents"""
+    """Extract metadata from markdown and PDF scientific documents"""
 
     def __init__(self):
         """Initialize the extractor with compiled patterns"""
         self.patterns = compile_patterns()
 
-    def extract(self, markdown_text: str, filepath: str) -> DocumentMetadata:
+    def extract(self, text: str, filepath: str, is_pdf: bool = False) -> DocumentMetadata:
         """
-        Extract metadata from markdown text
+        Extract metadata from document text (markdown or PDF)
 
         Args:
-            markdown_text: Full text of the markdown document
+            text: Full text of the document
             filepath: Path to the document file
+            is_pdf: If True, treat as PDF text; if False, treat as markdown
 
         Returns:
             DocumentMetadata object with extracted information
         """
         filename = Path(filepath).name
-        logger.info(f"Extracting metadata from {filename}")
+        file_type = "PDF" if is_pdf else "Markdown"
+        logger.info(f"Extracting metadata from {filename} ({file_type})")
 
         # Extract structured fields
-        title = self._extract_title(markdown_text) or filename
-        authors = self._extract_authors(markdown_text)
-        year = self._extract_year(markdown_text, filepath)
-        journal = self._extract_journal(markdown_text)
-        doi = self._extract_doi(markdown_text)
-        abstract = self._extract_abstract(markdown_text)
+        title = self._extract_title(text) or filename
+        authors = self._extract_authors(text)
+        year = self._extract_year(text, filepath)
+        journal = self._extract_journal(text)
+        doi = self._extract_doi(text)
+        abstract = self._extract_abstract(text)
 
-        # Extract thematic information
-        tags = extract_tags_from_text(markdown_text)
-        instruments = extract_instruments_from_text(markdown_text)
+        # Extract thematic information (only for markdown)
+        tags = extract_tags_from_text(text) if not is_pdf else []
+        instruments = extract_instruments_from_text(text) if not is_pdf else []
 
         return DocumentMetadata(
             filename=filename,
@@ -169,7 +171,7 @@ def extract_metadata_from_file(filepath: Path) -> Optional[DocumentMetadata]:
             text = f.read()
 
         extractor = MetadataExtractor()
-        return extractor.extract(text, str(filepath))
+        return extractor.extract(text, str(filepath), is_pdf=False)
     except Exception as e:
         logger.error(f"Error extracting metadata from {filepath}: {e}")
         return None
