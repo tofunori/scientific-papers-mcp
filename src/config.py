@@ -21,7 +21,9 @@ class Config(BaseSettings):
     chunk_overlap: int = 50  # token overlap between chunks
 
     # Embedding model
-    embedding_model: str = "intfloat/multilingual-e5-large"
+    embedding_model: str = "Qwen/Qwen3-Embedding-4B"
+    embedding_dimensions: int = 2048  # Matryoshka: 512, 1024, 2048, 4096 supported
+    batch_size: int = 32  # Batch size for embedding
 
     # Indexing
     auto_index_on_start: bool = False

@@ -71,8 +71,8 @@ class ChromaClientManager:
         default_metadata = {
             "description": "Glacier albedo research papers",
             "hnsw:space": "cosine",
-            "hnsw:construction_ef": 200,
-            "hnsw:M": 16,
+            "hnsw:construction_ef": 300,  # Optimized for 2048 dims (was 200)
+            "hnsw:M": 24,  # Optimized for 2048 dims (was 16) - More connections for high-dim
         }
 
         if metadata:

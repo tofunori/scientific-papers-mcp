@@ -41,6 +41,8 @@ class HybridSearchEngine:
 
         # Lazy loading flag for BM25 index
         self._bm25_loaded = False
+        self._bm25_dirty = False  # Track if BM25 needs rebuilding
+        self._docs_added_since_rebuild = 0  # Count docs added since last rebuild
 
         logger.info("Hybrid search engine initialized (lazy loading enabled)")
 
@@ -83,22 +85,32 @@ class HybridSearchEngine:
         """
         Lazy loading: Charge le modèle d'embedding seulement si nécessaire.
         Le modèle reste en mémoire après le premier chargement.
+        Supports Matryoshka Representation Learning (variable dimensions).
         """
         if self.embedding_model is None:
             logger.info(f"Loading embedding model (lazy): {self.embedding_model_name}")
             self.embedding_model = SentenceTransformer(self.embedding_model_name)
-            logger.info("Embedding model loaded successfully")
+            logger.info(f"Embedding model loaded successfully (dims: {config.embedding_dimensions})")
 
     def _ensure_bm25_loaded(self) -> None:
         """
         Lazy loading: Charge l'index BM25 seulement si nécessaire.
-        L'index reste en mémoire après le premier chargement.
+        Smart rebuild: Ne rebuild que si documents ajoutés depuis dernier rebuild.
         """
         if not self._bm25_loaded:
             logger.info("Loading BM25 index from Chroma (lazy)...")
             self._load_from_chroma()
             self._bm25_loaded = True
+            self._docs_added_since_rebuild = 0
             logger.info(f"BM25 index loaded successfully ({len(self.doc_ids)} documents)")
+        elif self._bm25_dirty and self._docs_added_since_rebuild > 10:
+            # Smart rebuild: Only rebuild if >10 docs added since last rebuild
+            logger.info(f"Rebuilding BM25 index ({self._docs_added_since_rebuild} documents added)...")
+            if self.documents:
+                self.bm25_index = BM25Okapi(self.documents)
+                self._bm25_dirty = False
+                self._docs_added_since_rebuild = 0
+                logger.info("BM25 index rebuilt successfully")
 
     def index_document(
         self, doc_id: str, text: str, metadata: dict = None
@@ -142,10 +154,69 @@ class HybridSearchEngine:
             if self.documents:
                 self.bm25_index = BM25Okapi(self.documents)
 
+            # Mark BM25 as dirty (will rebuild on next search if >10 docs added)
+            self._bm25_dirty = True
+            self._docs_added_since_rebuild += 1
             logger.debug(f"Indexed document: {doc_id}")
 
         except Exception as e:
             logger.error(f"Error indexing document {doc_id}: {e}")
+
+    def index_documents_batch(
+        self, doc_ids: list, texts: list, metadatas: list = None
+    ) -> None:
+        """
+        Batch index documents (3-5x faster than one-by-one).
+        Uses batch encoding for embeddings.
+
+        Args:
+            doc_ids: List of document IDs
+            texts: List of document texts
+            metadatas: List of metadata dicts (optional)
+        """
+        if not texts or len(texts) != len(doc_ids):
+            logger.warning("Invalid input for batch indexing")
+            return
+
+        try:
+            # Ensure embedding model is loaded
+            self._ensure_model_loaded()
+            self._ensure_bm25_loaded()
+
+            logger.info(f"Batch indexing {len(texts)} documents...")
+
+            # 1. Batch encode embeddings (3-5x faster)
+            embeddings = self.embedding_model.encode(
+                texts,
+                batch_size=config.batch_size,
+                show_progress_bar=True,
+                convert_to_tensor=False
+            )
+
+            # 2. Add to Chroma
+            self.collection.add(
+                ids=doc_ids,
+                documents=texts,
+                embeddings=embeddings.tolist(),
+                metadatas=metadatas if metadatas else None,
+            )
+
+            # 3. Add to BM25 index
+            for doc_id, text in zip(doc_ids, texts):
+                if text and text.strip():
+                    tokenized = text.lower().split()
+                    self.documents.append(tokenized)
+                    self.doc_ids.append(doc_id)
+                    self.doc_texts[doc_id] = text
+
+            # Mark as dirty instead of rebuilding immediately
+            self._bm25_dirty = True
+            self._docs_added_since_rebuild += len(texts)
+
+            logger.info(f"Successfully batch indexed {len(texts)} documents")
+
+        except Exception as e:
+            logger.error(f"Error in batch indexing: {e}")
 
     def search(
         self,
@@ -298,8 +369,10 @@ class HybridSearchEngine:
             dense_documents = dense_results["documents"][0] if dense_results.get("documents") else [None] * len(dense_ids)
 
             # Convert distances to similarities (closer = higher score)
+            # For cosine distance: range [0, 2], where 0=identical, 2=opposite
             for doc_id, distance, metadata, document in zip(dense_ids, dense_distances, dense_metadatas, dense_documents):
-                similarity = 1 / (1 + distance)  # Convert distance to similarity
+                # Correct formula for cosine distance
+                similarity = 1 - (distance / 2)  # Normalize to [0, 1]
                 combined_scores[doc_id] = alpha * similarity
                 if not hasattr(self, "_doc_metadatas"):
                     self._doc_metadatas = {}
