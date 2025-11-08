@@ -581,6 +581,25 @@ results = search_engine.search(
 )
 ```
 
+### Example 4: RAG prompt generation
+
+```python
+# Build a prompt that feeds only reranked passages to a generator
+rag_result = mcp.call_tool(
+    "generate_rag_answer",
+    question="What do recent studies say about glacier albedo feedback?",
+    top_k=3,
+    alpha=0.7,
+)
+
+# The tool returns a ready-to-send prompt plus the cited passages:
+print(rag_result["prompt"])
+for passage in rag_result["context_passages"]:
+    print(passage["source_label"], passage["title"], passage["section"])
+```
+
+The generated prompt is structured so the model must rely on the numbered passages (the `prompt` key) and cite them when forming an answer. This keeps hallucinations low and preserves traceability of every claim.
+
 ## 🚦 Troubleshooting
 
 ### Issue: Low search quality
