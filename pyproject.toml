@@ -29,6 +29,9 @@ dependencies = [
     "pymupdf>=1.24.0",
     "pytesseract>=0.3.10",
 
+    # Progress bars
+    "tqdm>=4.66.0",
+
     # Utils
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",

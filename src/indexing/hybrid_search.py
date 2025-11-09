@@ -1,6 +1,6 @@
 """Hybrid search engine combining semantic and keyword-based search"""
 
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Literal
 import logging
 import numpy as np
 
@@ -10,8 +10,13 @@ from rank_bm25 import BM25Okapi
 from ..config import config
 from ..utils.logger import setup_logger
 from .reranker import CrossEncoderReranker
+from .cohere_reranker import CohereReranker
+from .collection_sync import CollectionSyncManager
+from .chroma_client import ChromaClientManager
+from .rrf_fusion import ReciprocalRankFusion, RRFScorer
 
 logger = setup_logger(__name__)
+from .search_api_wrapper import ChromaSearchAPI, SPLADEEmbeddingClient, create_search_api_wrapper
 
 
 class HybridSearchEngine:
@@ -20,16 +25,73 @@ class HybridSearchEngine:
     for high-quality information retrieval
     """
 
-    def __init__(self, chroma_collection, embedding_model: str = None):
+    def __init__(self, chroma_collection=None, embedding_model: str = None):
         """
         Initialize hybrid search engine
 
         Args:
-            chroma_collection: Chroma collection object
+            chroma_collection: Chroma collection object (optional, for backward compatibility)
+                              If not provided, initializes hybrid mode with local + cloud collections
             embedding_model: Name of embedding model to use
         """
-        self.collection = chroma_collection
         self.embedding_model_name = embedding_model or config.embedding_model
+        self.sync_manager = None
+
+        # Backward compatibility: if collection provided, use old behavior
+        if chroma_collection is not None:
+            self.collection = chroma_collection
+            logger.info("Hybrid search engine initialized with single collection (backward compatibility)")
+
+            # IMPORTANT: Even in backward compatibility mode, create sync_manager if sync_to_cloud=True
+            # This allows existing code to benefit from cloud sync without refactoring
+            if config.sync_to_cloud:
+                logger.info("Cloud sync enabled - initializing sync manager for backward compatible mode...")
+                try:
+                    chroma_manager = ChromaClientManager()
+                    cloud_collection = None
+
+                    # Initialize cloud collection if available
+                    if chroma_manager.cloud_client:
+                        try:
+                            cloud_collection = chroma_manager.cloud_client.get_or_create_collection(
+                                config.default_collection_name
+                            )
+                            logger.info("Cloud collection initialized successfully")
+                        except Exception as e:
+                            logger.warning(f"Failed to initialize cloud collection: {e}")
+
+                    # Create sync manager with local collection and optional cloud collection
+                    self.sync_manager = CollectionSyncManager(
+                        local_collection=chroma_collection,  # Use the provided local collection
+                        cloud_collection=cloud_collection,
+                        sync_to_cloud=config.sync_to_cloud
+                    )
+                    logger.info("Sync manager created for backward compatible mode")
+                except Exception as e:
+                    logger.warning(f"Failed to create sync manager in backward compatible mode: {e}. Continuing without cloud sync.")
+        else:
+            # New hybrid mode: initialize dual-client support
+            logger.info("Initializing hybrid search engine with dual-client (local + cloud optional)...")
+            chroma_manager = ChromaClientManager()
+            local_collection = chroma_manager.get_or_create_collection(config.default_collection_name)
+            cloud_collection = None
+
+            # Initialize cloud collection if cloud mode is enabled
+            if config.use_chroma_cloud or config.sync_to_cloud:
+                try:
+                    cloud_collection = chroma_manager.cloud_client.get_or_create_collection(
+                        config.default_collection_name
+                    ) if chroma_manager.cloud_client else None
+                except Exception as e:
+                    logger.warning(f"Failed to initialize cloud collection: {e}")
+
+            # Create sync manager for hybrid operations
+            self.sync_manager = CollectionSyncManager(
+                local_collection=local_collection,
+                cloud_collection=cloud_collection,
+                sync_to_cloud=config.sync_to_cloud
+            )
+            self.collection = local_collection  # For backward compatibility with _load_from_chroma
 
         # Lazy load embedding model (loaded on first use)
         self.embedding_model = None
@@ -45,10 +107,78 @@ class HybridSearchEngine:
         self._bm25_dirty = False  # Track if BM25 needs rebuilding
         self._docs_added_since_rebuild = 0  # Count docs added since last rebuild
 
-        # Reranker (lazy loaded)
-        self.reranker = None
+        # Rerankers (lazy loaded)
+        self.reranker = None  # Cross-encoder reranker
+        self.cohere_reranker = None  # Cohere API reranker
+
+        # RRF fusion (lazy loaded)
+        # Search() API wrapper for cloud hybrid search (lazy loaded)
+        self.search_api_wrapper = None  # ChromaSearchAPI instance
+        self.splade_client = None  # SPLADE sparse embedding client
+        self.cloud_collection = None  # Cloud collection reference
+        self.rrf_fusion = None  # Reciprocal Rank Fusion engine
 
         logger.info("Hybrid search engine initialized (lazy loading enabled)")
+
+    def _initialize_search_api(self) -> None:
+        """Initialize Search() API wrapper for cloud search"""
+        if self.sync_manager and self.sync_manager.cloud_collection:
+            try:
+                # Get cloud client from sync manager
+                cloud_client = self.sync_manager.cloud_collection._client if hasattr(self.sync_manager.cloud_collection, '_client') else None
+
+                if cloud_client:
+                    self.search_api_wrapper = create_search_api_wrapper(cloud_client)
+                    self.cloud_collection = self.sync_manager.cloud_collection
+
+                    if self.search_api_wrapper and config.sparse_vector_enabled:
+                        # Initialize SPLADE client if sparse vectors enabled
+                        self.splade_client = SPLADEEmbeddingClient()
+                        logger.info("Search() API and SPLADE client initialized successfully")
+                    elif self.search_api_wrapper:
+                        logger.info("Search() API initialized (sparse vectors disabled)")
+                    else:
+                        logger.warning("Search() API not available in this Chroma version")
+
+            except Exception as e:
+                logger.warning(f"Failed to initialize Search() API: {e}. Falling back to local search.")
+                self.search_api_wrapper = None
+                self.splade_client = None
+
+    def _generate_sparse_vector(self, text: str) -> Optional[Dict[int, float]]:
+        """
+        Generate sparse vector (SPLADE) for text.
+
+        Returns None if SPLADE not available (falls back to BM25 locally).
+        For cloud: requires Cohere API or other sparse embedding service.
+
+        Args:
+            text: Text to embed as sparse vector
+
+        Returns:
+            Dict mapping token_id -> score, or None if unavailable
+        """
+        if not self.splade_client:
+            logger.debug("SPLADE client not available, returning None")
+            return None
+
+        try:
+            sparse_vec = self.splade_client.encode(text)
+            return sparse_vec if sparse_vec else None
+        except Exception as e:
+            logger.debug(f"Failed to generate sparse vector: {e}")
+            return None
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        """Get dense embedding for query"""
+        try:
+            self._ensure_model_loaded()
+            embedding = self.embedding_model.encode(query, convert_to_tensor=False)
+            return embedding.tolist() if hasattr(embedding, 'tolist') else embedding
+        except Exception as e:
+            logger.error(f"Failed to generate query embedding: {e}")
+            return []
+
 
     def _load_from_chroma(self) -> None:
         """Load existing documents from Chroma into the BM25 index"""
@@ -271,13 +401,25 @@ class HybridSearchEngine:
             # 3. Prepare documents for ChromaDB (already filtered to text-only)
             chroma_documents = filtered_texts
 
-            # 4. Add to Chroma
-            self.collection.add(
-                ids=filtered_ids,
-                documents=chroma_documents,
-                embeddings=embeddings.tolist(),
-                metadatas=filtered_metadatas if filtered_metadatas else None,
-            )
+            # 4. Add to Chroma using sync manager (for cloud sync support)
+            # Use sync_manager if available (hybrid local+cloud mode), otherwise fall back to direct collection
+            if self.sync_manager:
+                # Cloud sync mode: use sync manager
+                self.sync_manager.add(
+                    ids=filtered_ids,
+                    documents=chroma_documents,
+                    embeddings=embeddings.tolist(),
+                    metadatas=filtered_metadatas if filtered_metadatas else None,
+                    sparse_vectors=None  # BM25 sparse vectors generated locally during search
+                )
+            else:
+                # Backward compatibility: direct collection add
+                self.collection.add(
+                    ids=filtered_ids,
+                    documents=chroma_documents,
+                    embeddings=embeddings.tolist(),
+                    metadatas=filtered_metadatas if filtered_metadatas else None,
+                )
 
             # 4. Add to BM25 index (text-only chunks only)
             for doc_id, text in zip(doc_ids, texts):
@@ -307,6 +449,7 @@ class HybridSearchEngine:
         alpha: float = 0.5,
         where_filter: Optional[Dict] = None,
         where_document: Optional[Dict] = None,
+        source: Literal["local", "cloud", "default"] = "default",
     ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
         """
         Perform hybrid search combining semantic and keyword matching
@@ -319,6 +462,7 @@ class HybridSearchEngine:
             where_filter: Optional metadata filter for Chroma
             where_document: Optional document content filter for full text search
                           Supports: $contains, $not_contains, $regex, $and, $or
+            source: Search source - 'local' (fast), 'cloud' (remote), or 'default' (use config)
 
         Returns:
             Tuple of (document_ids, scores, metadatas, documents)
@@ -326,18 +470,53 @@ class HybridSearchEngine:
         if not query.strip():
             return [], [], [], []
 
-        logger.info(f"Search query: '{query}' (alpha={alpha}, top_k={top_k})")
+        logger.info(f"Search query: '{query}' (alpha={alpha}, top_k={top_k}, source={source})")
 
         try:
+
+            # Determine search source (local vs cloud)
+            effective_source = source if source != "default" else config.default_search_source
+
+            # Try cloud Search() API first if enabled and available
+            if (effective_source == "cloud" or config.enable_cloud_search_api) and self.search_api_wrapper and self.search_api_wrapper.is_available():
+                logger.info(f"Using cloud Search() API for query: '{query}'")
+
+                # Generate query embeddings (dense + sparse)
+                query_embedding = self._get_query_embedding(query)
+                query_sparse = self._generate_sparse_vector(query)
+
+                try:
+                    # Use cloud Search() API with RRF if available
+                    cloud_results = self.search_api_wrapper.search_hybrid_with_rrf(
+                        collection=self.cloud_collection,
+                        query_embedding=query_embedding,
+                        query_sparse_vector=query_sparse,
+                        top_k=top_k,
+                        rrf_k_parameter=config.rrf_k_parameter,
+                        dense_weight=config.rrf_dense_weight,
+                        sparse_weight=config.rrf_sparse_weight,
+                    )
+
+                    if cloud_results and cloud_results.get("ids") and cloud_results["ids"][0]:
+                        logger.info(f"Cloud Search() API returned {len(cloud_results['ids'][0])} results")
+                        return (
+                            cloud_results["ids"][0],
+                            cloud_results.get("distances", [[]])[0],
+                            cloud_results.get("metadatas", [[]])[0],
+                            cloud_results.get("documents", [[]])[0]
+                        )
+                except Exception as e:
+                    logger.warning(f"Cloud Search() API failed, falling back to local: {e}")
+
             # Ensure BM25 index is loaded for keyword search
             self._ensure_bm25_loaded()
 
             # Step 1: Dense semantic search
             dense_results = self._semantic_search(
-                query, top_k=top_k * 2, where_filter=where_filter, where_document=where_document
+                query, top_k=top_k * 2, where_filter=where_filter, where_document=where_document, source=source
             )
 
-            # Step 2: Sparse keyword search (BM25)
+            # Step 2: Sparse keyword search (BM25) - only on local collection
             sparse_results = self._keyword_search(query, top_k=top_k * 2)
 
             # Step 3: Combine and rank results
@@ -360,13 +539,18 @@ class HybridSearchEngine:
         where_filter: Optional[Dict] = None,
         where_document: Optional[Dict] = None,
         use_metadata_boost: bool = True,
-    ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
+        source: Literal["local", "cloud", "default"] = "default",
+        use_rrf: bool = True,
+        rrf_k_parameter: int = 60,
+        rrf_dense_weight: float = 0.7,
+        rrf_sparse_weight: float = 0.3) -> Tuple[List[str], List[float], List[Dict], List[str]]:
         """
-        Perform hybrid search with cross-encoder reranking for improved precision
+        Perform hybrid search with reranking for improved precision
 
-        This provides ~35% better precision than standard hybrid search by:
-        1. First retrieving top-N candidates using hybrid search (N=reranker_top_k)
-        2. Reranking candidates using cross-encoder scoring
+        Uses Cohere Rerank API if enabled, otherwise falls back to local cross-encoder.
+        Provides 25-35% better precision than standard hybrid search by:
+        1. First retrieving top-N candidates using hybrid search
+        2. Reranking candidates using Cohere API or cross-encoder scoring
         3. Optionally boosting scores based on title/abstract matches
         4. Returning final top-K results
 
@@ -377,7 +561,12 @@ class HybridSearchEngine:
             where_filter: Optional metadata filter for Chroma
             where_document: Optional document content filter
             use_metadata_boost: Whether to boost scores for title/abstract matches (default True)
+            source: Search source - 'local' (fast), 'cloud' (remote), or 'default' (use config)
 
+        use_rrf: Use Reciprocal Rank Fusion (True) or alpha weighting (False)
+        rrf_k_parameter: RRF smoothing parameter k (higher = more uniform ranking)
+        rrf_dense_weight: Weight for dense semantic results in RRF (0.7 = 70%)
+        rrf_sparse_weight: Weight for sparse keyword results in RRF (0.3 = 30%)
         Returns:
             Tuple of (document_ids, reranked_scores, metadatas, documents)
         """
@@ -386,15 +575,10 @@ class HybridSearchEngine:
 
         logger.info(
             f"Search with reranking: '{query}' (alpha={alpha}, top_k={top_k}, "
-            f"metadata_boost={use_metadata_boost})"
+            f"metadata_boost={use_metadata_boost}, source={source})"
         )
 
         try:
-            # Lazy load reranker
-            if self.reranker is None:
-                logger.info("Initializing cross-encoder reranker (lazy loading)...")
-                self.reranker = CrossEncoderReranker()
-
             # Step 1: Retrieve candidates using hybrid search
             # Retrieve more candidates than final top_k for reranking
             candidate_top_k = max(config.reranker_top_k, top_k * 2)
@@ -405,7 +589,11 @@ class HybridSearchEngine:
                 alpha=alpha,
                 where_filter=where_filter,
                 where_document=where_document,
-            )
+                source=source,
+             use_rrf=use_rrf,
+            rrf_k_parameter=rrf_k_parameter,
+            rrf_dense_weight=rrf_dense_weight,
+            rrf_sparse_weight=rrf_sparse_weight)
 
             if not candidate_ids:
                 logger.info("No candidates found for reranking")
@@ -413,30 +601,28 @@ class HybridSearchEngine:
 
             logger.info(f"Retrieved {len(candidate_ids)} candidates for reranking")
 
-            # Step 2: Rerank candidates using cross-encoder
-            if use_metadata_boost:
-                # Rerank with metadata boosting (title 2x, abstract 1.5x)
-                final_ids, final_scores, final_metas, final_docs = (
-                    self.reranker.rerank_with_metadata_boost(
-                        query=query,
-                        documents=candidate_docs,
-                        doc_ids=candidate_ids,
-                        scores=candidate_scores,
-                        metadatas=candidate_metas,
-                        top_k=top_k,
-                        title_boost=2.0,
-                        abstract_boost=1.5,
-                    )
+            # Step 2: Choose reranker and execute reranking
+            if config.use_cohere_rerank:
+                # Use Cohere Rerank API
+                final_ids, final_scores, final_metas, final_docs = self._rerank_with_cohere(
+                    query=query,
+                    candidate_docs=candidate_docs,
+                    candidate_ids=candidate_ids,
+                    candidate_scores=candidate_scores,
+                    candidate_metas=candidate_metas,
+                    top_k=top_k,
+                    use_metadata_boost=use_metadata_boost,
                 )
             else:
-                # Standard reranking without metadata boost
-                final_ids, final_scores, final_metas, final_docs = self.reranker.rerank(
+                # Use local cross-encoder reranker
+                final_ids, final_scores, final_metas, final_docs = self._rerank_with_cross_encoder(
                     query=query,
-                    documents=candidate_docs,
-                    doc_ids=candidate_ids,
-                    scores=candidate_scores,
-                    metadatas=candidate_metas,
+                    candidate_docs=candidate_docs,
+                    candidate_ids=candidate_ids,
+                    candidate_scores=candidate_scores,
+                    candidate_metas=candidate_metas,
                     top_k=top_k,
+                    use_metadata_boost=use_metadata_boost,
                 )
 
             logger.info(
@@ -452,8 +638,119 @@ class HybridSearchEngine:
             # Fallback to standard search
             return self.search(query, top_k, alpha, where_filter, where_document)
 
+    def _rerank_with_cohere(
+        self,
+        query: str,
+        candidate_docs: List[str],
+        candidate_ids: List[str],
+        candidate_scores: List[float],
+        candidate_metas: List[dict],
+        top_k: int,
+        use_metadata_boost: bool = True,
+    ) -> Tuple[List[str], List[float], List[dict], List[str]]:
+        """
+        Rerank candidates using Cohere API
+
+        Args:
+            query: Search query
+            candidate_docs: List of document texts
+            candidate_ids: List of document IDs
+            candidate_scores: Original search scores
+            candidate_metas: List of metadata dicts
+            top_k: Number of results to return
+            use_metadata_boost: Whether to apply additional metadata boosting
+
+        Returns:
+            Tuple of (doc_ids, reranked_scores, metadatas, documents)
+        """
+        # Lazy load Cohere reranker
+        if self.cohere_reranker is None:
+            logger.info("Initializing Cohere reranker (lazy loading)...")
+            self.cohere_reranker = CohereReranker()
+
+        logger.info(f"Using Cohere {config.cohere_model} for reranking")
+
+        if use_metadata_boost:
+            # Rerank with additional metadata boosting
+            return self.cohere_reranker.rerank_with_metadata_boost(
+                query=query,
+                documents=candidate_docs,
+                doc_ids=candidate_ids,
+                scores=candidate_scores,
+                metadatas=candidate_metas,
+                top_k=top_k,
+                title_boost=2.0,
+                abstract_boost=1.5,
+            )
+        else:
+            # Standard Cohere reranking
+            return self.cohere_reranker.rerank(
+                query=query,
+                documents=candidate_docs,
+                doc_ids=candidate_ids,
+                scores=candidate_scores,
+                metadatas=candidate_metas,
+                top_k=top_k,
+            )
+
+    def _rerank_with_cross_encoder(
+        self,
+        query: str,
+        candidate_docs: List[str],
+        candidate_ids: List[str],
+        candidate_scores: List[float],
+        candidate_metas: List[dict],
+        top_k: int,
+        use_metadata_boost: bool = True,
+    ) -> Tuple[List[str], List[float], List[dict], List[str]]:
+        """
+        Rerank candidates using local cross-encoder (fallback)
+
+        Args:
+            query: Search query
+            candidate_docs: List of document texts
+            candidate_ids: List of document IDs
+            candidate_scores: Original search scores
+            candidate_metas: List of metadata dicts
+            top_k: Number of results to return
+            use_metadata_boost: Whether to apply metadata boosting
+
+        Returns:
+            Tuple of (doc_ids, reranked_scores, metadatas, documents)
+        """
+        # Lazy load cross-encoder reranker
+        if self.reranker is None:
+            logger.info("Initializing cross-encoder reranker (lazy loading)...")
+            self.reranker = CrossEncoderReranker()
+
+        logger.info(f"Using local cross-encoder {config.reranker_model} for reranking")
+
+        if use_metadata_boost:
+            # Rerank with metadata boosting
+            return self.reranker.rerank_with_metadata_boost(
+                query=query,
+                documents=candidate_docs,
+                doc_ids=candidate_ids,
+                scores=candidate_scores,
+                metadatas=candidate_metas,
+                top_k=top_k,
+                title_boost=2.0,
+                abstract_boost=1.5,
+            )
+        else:
+            # Standard reranking
+            return self.reranker.rerank(
+                query=query,
+                documents=candidate_docs,
+                doc_ids=candidate_ids,
+                scores=candidate_scores,
+                metadatas=candidate_metas,
+                top_k=top_k,
+            )
+
     def _semantic_search(
-        self, query: str, top_k: int = 20, where_filter: Optional[Dict] = None, where_document: Optional[Dict] = None
+        self, query: str, top_k: int = 20, where_filter: Optional[Dict] = None, where_document: Optional[Dict] = None,
+        source: Literal["local", "cloud", "default"] = "default"
     ) -> Dict:
         """
         Semantic search using dense vectors
@@ -463,6 +760,7 @@ class HybridSearchEngine:
             top_k: Number of results
             where_filter: Optional metadata filter
             where_document: Optional document content filter
+            source: Search source - 'local' (fast), 'cloud' (remote), or 'default' (use config)
 
         Returns:
             Results dictionary from Chroma
@@ -476,14 +774,24 @@ class HybridSearchEngine:
                 query, convert_to_tensor=False
             )
 
-            # Query Chroma
-            results = self.collection.query(
-                query_embeddings=[query_embedding.tolist()],
-                n_results=top_k,
-                where=where_filter,
-                where_document=where_document,
-                include=["documents", "metadatas", "distances"],
-            )
+            # Route to appropriate collection based on source
+            if self.sync_manager:
+                # Hybrid mode: use sync_manager for source-aware routing
+                results = self.sync_manager.query(
+                    query_embedding=query_embedding.tolist(),
+                    where=where_filter,
+                    top_k=top_k,
+                    source=source
+                )
+            else:
+                # Backward compatibility mode: use single collection
+                results = self.collection.query(
+                    query_embeddings=[query_embedding.tolist()],
+                    n_results=top_k,
+                    where=where_filter,
+                    where_document=where_document,
+                    include=["documents", "metadatas", "distances"],
+                )
 
             return results
         except Exception as e:
@@ -530,16 +838,120 @@ class HybridSearchEngine:
         top_k: int,
     ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
         """
-        Combine semantic and keyword search results
+        Combine semantic and keyword search results using RRF or alpha weighting
+
+        Uses Reciprocal Rank Fusion (RRF) if enabled, otherwise uses linear combination.
 
         Args:
             dense_results: Results from semantic search (with distances and documents)
             sparse_results: Results from keyword search (with scores)
-            alpha: Weight for semantic (1-alpha for keyword)
+            alpha: Weight for semantic (1-alpha for keyword), used if RRF disabled
             top_k: Final number of results
 
         Returns:
             Tuple of (doc_ids, combined_scores, metadatas, documents)
+        """
+        # Initialize metadata/document caches
+        if not hasattr(self, "_doc_metadatas"):
+            self._doc_metadatas = {}
+        if not hasattr(self, "_doc_documents"):
+            self._doc_documents = {}
+
+        # Check if RRF should be used
+        if config.use_rrf:
+            return self._combine_with_rrf(dense_results, sparse_results, top_k)
+        else:
+            return self._combine_with_alpha(dense_results, sparse_results, alpha, top_k)
+
+    def _combine_with_rrf(
+        self,
+        dense_results: Dict,
+        sparse_results: Dict,
+        top_k: int,
+    ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
+        """
+        Combine results using Reciprocal Rank Fusion (RRF)
+
+        RRF formula: score = -sum(weight_i / (k + rank_i))
+        Better than linear combination at merging different ranking systems.
+        """
+        # Lazy initialize RRF fusion engine
+        if self.rrf_fusion is None:
+            self.rrf_fusion = ReciprocalRankFusion(
+                k_parameter=config.rrf_k_parameter,
+                weights={
+                    "dense": config.rrf_dense_weight,
+                    "sparse": config.rrf_sparse_weight
+                },
+                normalize_scores=False
+            )
+            logger.info(
+                f"RRF engine initialized: k={config.rrf_k_parameter}, "
+                f"dense_weight={config.rrf_dense_weight}, sparse_weight={config.rrf_sparse_weight}"
+            )
+
+        # Prepare result sets for RRF
+        result_sets = {}
+
+        # Dense results
+        if dense_results["ids"] and dense_results["ids"][0]:
+            dense_ids = dense_results["ids"][0]
+            dense_distances = dense_results["distances"][0]
+            dense_metadatas = dense_results["metadatas"][0] if dense_results.get("metadatas") else [None] * len(dense_ids)
+            dense_documents = dense_results["documents"][0] if dense_results.get("documents") else [None] * len(dense_ids)
+
+            # Convert distances to similarities for display
+            dense_tuple_results = []
+            for doc_id, distance, metadata, document in zip(dense_ids, dense_distances, dense_metadatas, dense_documents):
+                similarity = 1 - (distance / 2)  # Normalize to [0, 1]
+                dense_tuple_results.append((doc_id, similarity, metadata or {}))
+                self._doc_metadatas[doc_id] = metadata
+                self._doc_documents[doc_id] = document
+
+            result_sets["dense"] = dense_tuple_results
+
+        # Sparse results
+        if sparse_results["ids"] and sparse_results["ids"][0]:
+            sparse_ids = sparse_results["ids"][0]
+            sparse_scores = sparse_results["scores"][0]
+
+            # Normalize and prepare sparse results
+            if sparse_scores:
+                max_sparse = max(sparse_scores)
+                min_sparse = min(sparse_scores)
+                sparse_range = max_sparse - min_sparse if max_sparse > min_sparse else 1
+
+                sparse_tuple_results = []
+                for doc_id, score in zip(sparse_ids, sparse_scores):
+                    normalized_score = (score - min_sparse) / sparse_range if sparse_range > 0 else 0
+                    sparse_tuple_results.append((doc_id, normalized_score, {}))
+
+                result_sets["sparse"] = sparse_tuple_results
+
+        # Apply RRF fusion
+        rrf_results = self.rrf_fusion.fuse(result_sets, top_k=top_k)
+
+        final_ids = [r.doc_id for r in rrf_results]
+        final_scores = [r.rrf_score for r in rrf_results]
+        final_metadatas = [self._doc_metadatas.get(doc_id, {}) for doc_id in final_ids]
+        final_documents = [self._doc_documents.get(doc_id, "") for doc_id in final_ids]
+
+        logger.debug(f"RRF fusion complete: {len(final_ids)} results, "
+                    f"top score: {final_scores[0] if final_scores else 'N/A':.6f}")
+
+        return final_ids, final_scores, final_metadatas, final_documents
+
+    def _combine_with_alpha(
+        self,
+        dense_results: Dict,
+        sparse_results: Dict,
+        alpha: float,
+        top_k: int,
+    ) -> Tuple[List[str], List[float], List[Dict], List[str]]:
+        """
+        Combine results using simple alpha weighting (fallback method)
+
+        Formula: score = alpha * dense_similarity + (1 - alpha) * sparse_normalized_score
         """
         combined_scores = {}
 
@@ -551,15 +963,9 @@ class HybridSearchEngine:
             dense_documents = dense_results["documents"][0] if dense_results.get("documents") else [None] * len(dense_ids)
 
             # Convert distances to similarities (closer = higher score)
-            # For cosine distance: range [0, 2], where 0=identical, 2=opposite
             for doc_id, distance, metadata, document in zip(dense_ids, dense_distances, dense_metadatas, dense_documents):
-                # Correct formula for cosine distance
                 similarity = 1 - (distance / 2)  # Normalize to [0, 1]
                 combined_scores[doc_id] = alpha * similarity
-                if not hasattr(self, "_doc_metadatas"):
-                    self._doc_metadatas = {}
-                if not hasattr(self, "_doc_documents"):
-                    self._doc_documents = {}
                 self._doc_metadatas[doc_id] = metadata
                 self._doc_documents[doc_id] = document
 
@@ -583,26 +989,15 @@ class HybridSearchEngine:
                         combined_scores[doc_id] = (1 - alpha) * normalized_score
 
         # Sort by combined score
-        ranked = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)[
-            :top_k
-        ]
+        ranked = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
 
         final_ids = [doc_id for doc_id, _ in ranked]
         final_scores = [score for _, score in ranked]
-
-        # Get metadatas and documents
-        final_metadatas = []
-        final_documents = []
-        if hasattr(self, "_doc_metadatas"):
-            final_metadatas = [
-                self._doc_metadatas.get(doc_id, {}) for doc_id in final_ids
-            ]
-        if hasattr(self, "_doc_documents"):
-            final_documents = [
-                self._doc_documents.get(doc_id, "") for doc_id in final_ids
-            ]
+        final_metadatas = [self._doc_metadatas.get(doc_id, {}) for doc_id in final_ids]
+        final_documents = [self._doc_documents.get(doc_id, "") for doc_id in final_ids]
 
         return final_ids, final_scores, final_metadatas, final_documents
+
 
     def get_document_text(self, doc_id: str) -> str:
         """Get full text of a document"""

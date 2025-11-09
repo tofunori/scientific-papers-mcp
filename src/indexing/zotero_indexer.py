@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from dataclasses import dataclass
 import logging
+from tqdm import tqdm
 
 from ..models.document import ZoteroDocument
 from ..extractors.pdf_extractor import extract_text_from_pdf, extract_metadata_from_pdf
@@ -81,14 +82,14 @@ class ZoteroLibraryIndexer:
 
         # Initialize document chunker for splitting papers
         self.chunker = DocumentChunker(
-            chunk_size=512,      # 512 tokens per chunk (optimal for scientific papers)
-            chunk_overlap=100,   # 20% overlap to preserve context
+            chunk_size=config.chunk_size,
+            chunk_overlap=config.chunk_overlap,
         )
 
         self.statistics = IndexingStatistics()
 
         logger.info(f"Zotero library indexer initialized (path: {self.library_path})")
-        logger.info(f"Document chunker initialized (chunk_size=512, overlap=100)")
+        logger.info(f"Document chunker initialized (chunk_size={config.chunk_size}, overlap={config.chunk_overlap})")
 
     def scan_zotero_library(
         self,
@@ -116,8 +117,11 @@ class ZoteroLibraryIndexer:
         all_files = []
 
         try:
-            # Scan all subdirectories in Zotero storage
-            for item_dir in self.library_path.iterdir():
+            # Get list of item directories for progress tracking
+            item_dirs = list(self.library_path.iterdir())
+
+            # Scan all subdirectories in Zotero storage with progress bar
+            for item_dir in tqdm(item_dirs, desc="Scanning Zotero folders", unit="folder"):
                 if not item_dir.is_dir():
                     continue
 
@@ -165,13 +169,27 @@ class ZoteroLibraryIndexer:
             # Get file modification time
             file_modified = datetime.fromtimestamp(file_path.stat().st_mtime)
 
+            # Intelligent author fallback: if metadata extraction fails, try text extraction
+            authors = metadata.get("authors", [])
+            if not authors and full_text:
+                logger.debug(f"No authors in metadata for {file_path.name}, trying text extraction...")
+                # Import the text extraction function
+                from ..extractors.pdf_extractor import _extract_authors_from_text
+                authors = _extract_authors_from_text(full_text[:2000])  # First 2000 chars usually contain authors
+
+                if authors:
+                    logger.debug(f"Successfully extracted {len(authors)} authors from text: {authors[:3]}")
+                else:
+                    logger.warning(f"No authors found for {file_path.name} - using placeholder")
+                    authors = ["Unknown"]  # Placeholder to enable fulltext search
+
             # Create ZoteroDocument
             doc = ZoteroDocument(
                 item_key="",  # Will be auto-generated from file_path
                 file_path=file_path,
                 filename=file_path.name,
                 title=metadata.get("title", file_path.stem),
-                authors=metadata.get("authors", []),
+                authors=authors,
                 year=metadata.get("year"),
                 doi=metadata.get("doi"),
                 publication=metadata.get("journal"),
@@ -189,9 +207,18 @@ class ZoteroLibraryIndexer:
                 images=images,  # NEW: Store images for multimodal embedding
             )
 
+            # Validation: Log warning if authors are still missing
+            if not doc.authors or doc.authors == ["Unknown"]:
+                self.statistics.missing_authors = getattr(self.statistics, 'missing_authors', 0) + 1
+                logger.warning(
+                    f"Missing authors for {file_path.name} - "
+                    f"Title: {doc.title[:50]}... "
+                    f"Total papers without authors: {self.statistics.missing_authors}"
+                )
+
             logger.debug(
                 f"Extracted: {doc.title[:50]}... "
-                f"(DOI: {doc.doi or 'N/A'}, pages: {doc.page_count})"
+                f"(Authors: {len(doc.authors)}, DOI: {doc.doi or 'N/A'}, pages: {doc.page_count})"
             )
 
             return doc
@@ -302,7 +329,7 @@ class ZoteroLibraryIndexer:
         all_chunk_metadatas = []
         total_chunks = 0
 
-        for doc_idx, doc in enumerate(documents):
+        for doc_idx, doc in enumerate(tqdm(documents, desc="Chunking documents", unit="doc")):
             try:
                 # Generate text-only chunks from document
                 chunks = doc.to_chunks(self.chunker, include_fulltext=True)
@@ -355,13 +382,6 @@ class ZoteroLibraryIndexer:
                     file_path=doc.file_path, doc_id=doc.item_key, doi=doc.doi
                 )
 
-                # Log progress every 10 documents
-                if (doc_idx + 1) % 10 == 0:
-                    logger.info(
-                        f"Chunked {doc_idx + 1}/{len(documents)} documents "
-                        f"({total_chunks} total chunks so far)"
-                    )
-
             except Exception as e:
                 logger.error(f"Error chunking {doc.filename}: {e}")
                 self.statistics.errors += 1
@@ -380,7 +400,7 @@ class ZoteroLibraryIndexer:
         # Index all chunks in batches
         logger.info(f"Indexing {len(all_chunk_ids)} chunks in batches...")
 
-        for batch_idx in range(0, len(all_chunk_ids), batch_size):
+        for batch_idx in tqdm(range(0, len(all_chunk_ids), batch_size), desc="Indexing chunks", unit="batch"):
             batch_ids = all_chunk_ids[batch_idx : batch_idx + batch_size]
             batch_texts = all_chunk_texts[batch_idx : batch_idx + batch_size]
             batch_metas = all_chunk_metadatas[batch_idx : batch_idx + batch_size]
@@ -388,13 +408,6 @@ class ZoteroLibraryIndexer:
             try:
                 self.search_engine.index_documents_batch(
                     batch_ids, batch_texts, batch_metas
-                )
-
-                progress = batch_idx + len(batch_ids)
-                progress_pct = (progress / len(all_chunk_ids)) * 100
-                logger.info(
-                    f"Indexed batch {batch_idx//batch_size + 1}: "
-                    f"{progress}/{len(all_chunk_ids)} chunks ({progress_pct:.1f}%)"
                 )
 
             except Exception as e:
@@ -449,7 +462,7 @@ class ZoteroLibraryIndexer:
             # Step 2: Extract documents
             logger.info("Extracting metadata and content...")
             documents = []
-            for file_path in file_paths:
+            for file_path in tqdm(file_paths, desc="Extracting documents", unit="doc"):
                 doc = self.extract_document(file_path)
                 if doc:
                     documents.append(doc)

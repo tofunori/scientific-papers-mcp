@@ -90,7 +90,11 @@ def search(
     top_k: int = 10,
     alpha: float = 0.5,
     text_filter: Optional[str] = None,
-) -> Dict:
+    source: str = "default",
+    use_rrf: bool = True,
+    rrf_k_parameter: int = 60,
+    rrf_dense_weight: float = 0.7,
+    rrf_sparse_weight: float = 0.3) -> Dict:
     """
     Perform hybrid semantic + keyword search across research papers.
 
@@ -105,7 +109,12 @@ def search(
                     - Contains: '{"$contains": "albedo"}'
                     - AND: '{"$and": [{"$contains": "Alaska"}, {"$contains": "glacier"}]}'
                     - OR: '{"$or": [{"$contains": "MODIS"}, {"$contains": "Sentinel"}]}'
+        source: Search source - 'local' (fast), 'cloud' (remote), or 'default' (use config)
 
+        use_rrf: Use Reciprocal Rank Fusion (True) or alpha weighting (False)
+        rrf_k_parameter: RRF smoothing parameter k (higher = more uniform ranking)
+        rrf_dense_weight: Weight for dense semantic results in RRF (0.7 = 70%)
+        rrf_sparse_weight: Weight for sparse keyword results in RRF (0.3 = 30%)
     Returns:
         List of matching papers with relevance scores and metadata
     """
@@ -113,7 +122,7 @@ def search(
         return {"error": "Search engine not initialized"}
 
     try:
-        logger.info(f"Search: '{query}' (top_k={top_k}, alpha={alpha})")
+        logger.info(f"Search: '{query}' (top_k={top_k}, alpha={alpha}, source={source})")
 
         # Parse text_filter JSON if provided
         where_document = None
@@ -127,8 +136,10 @@ def search(
 
         # Use reranking search for improved precision (~35% better)
         doc_ids, scores, metadatas, documents = search_engine.search_with_reranking(
-            query=query, top_k=top_k, alpha=alpha, where_document=where_document
-        )
+            query=query, top_k=top_k, alpha=alpha, where_document=where_document, source=source, use_rrf=use_rrf,
+            rrf_k_parameter=rrf_k_parameter,
+            rrf_dense_weight=rrf_dense_weight,
+            rrf_sparse_weight=rrf_sparse_weight)
 
         results = []
         for doc_id, score, metadata, document in zip(doc_ids, scores, metadatas, documents):
@@ -177,6 +188,7 @@ def generate_rag_answer(
     text_filter: Optional[str] = None,
     metadata_filter: Optional[str] = None,
     context_limit_chars: int = 4000,
+    source: str = "default",
 ) -> Dict:
     """
     Build a RAG prompt using the reranked passages as the only context.
@@ -216,6 +228,7 @@ def generate_rag_answer(
             alpha=alpha,
             where_document=where_document,
             where_filter=where_filter,
+            source=source,
         )
 
         if not doc_ids:
@@ -307,6 +320,7 @@ def search_fulltext(
     combine_with: Optional[List[str]] = None,
     combine_mode: str = "and",
     top_k: int = 10,
+    source: str = "default",
 ) -> Dict:
     """
     Full text search with simplified syntax for exact matching, regex, and boolean logic.
@@ -317,6 +331,7 @@ def search_fulltext(
         combine_with: Additional patterns for AND/OR combinations (optional)
         combine_mode: 'and' or 'or' for combining multiple patterns
         top_k: Number of results to return (default: 10)
+        source: Search source - 'local' (fast), 'cloud' (remote), or 'default' (use config)
 
     Returns:
         List of documents matching the full text search criteria
@@ -331,7 +346,7 @@ def search_fulltext(
         return {"error": "Search engine not initialized"}
 
     try:
-        logger.info(f"Full text search: pattern='{pattern}', type={pattern_type}, combine={combine_with}")
+        logger.info(f"Full text search: pattern='{pattern}', type={pattern_type}, combine={combine_with}, source={source}")
 
         # Build where_document filter
         if pattern_type == "contains":
@@ -358,7 +373,8 @@ def search_fulltext(
             query=pattern,  # Use pattern as semantic fallback query
             top_k=top_k,
             alpha=0.2,  # Favor keyword matching over semantic
-            where_document=where_doc
+            where_document=where_doc,
+            source=source
         )
 
         # Format results
@@ -409,11 +425,16 @@ def search_by_author(author_name: str, limit: int = 50, offset: int = 0) -> Dict
     Examples:
         - search_by_author("Wang") → First 50 papers with "Wang" in author list
         - search_by_author("Smith", limit=100, offset=50) → Papers 51-150 by Smith
+        - search_by_author("Unknown") → Papers with missing author metadata
     """
     if not search_engine:
         return {"error": "Search engine not initialized"}
 
     try:
+        # Convert string parameters to int (MCP passes strings)
+        limit = int(limit)
+        offset = int(offset)
+
         # Clamp limit to reasonable bounds
         limit = min(max(1, limit), 200)
         offset = max(0, offset)
@@ -428,11 +449,27 @@ def search_by_author(author_name: str, limit: int = 50, offset: int = 0) -> Dict
             include=["metadatas", "documents"]
         )
 
+        # Track metadata quality statistics
+        total_documents = len(all_data["ids"])
+        documents_with_authors = 0
+        documents_with_unknown = 0
+        documents_with_empty = 0
+
         # Filter by author name in metadata (case-insensitive partial match)
         matching_papers = []
         for doc_id, metadata, document in zip(all_data["ids"], all_data["metadatas"], all_data["documents"]):
-            authors = metadata.get("authors", "") if metadata else ""
-            if author_name.lower() in authors.lower():
+            authors_str = metadata.get("authors", "") if metadata else ""
+
+            # Track metadata quality
+            if authors_str and authors_str != "['Unknown']":
+                documents_with_authors += 1
+            elif authors_str == "['Unknown']":
+                documents_with_unknown += 1
+            else:
+                documents_with_empty += 1
+
+            # Check for match (including "Unknown" placeholder)
+            if author_name.lower() in authors_str.lower():
                 # Extract unique paper identifier (before chunk suffix)
                 paper_id = doc_id.rsplit("_chunk_", 1)[0]
 
@@ -441,19 +478,28 @@ def search_by_author(author_name: str, limit: int = 50, offset: int = 0) -> Dict
                     matching_papers.append({
                         "paper_id": paper_id,
                         "title": metadata.get("title", "Unknown") if metadata else "Unknown",
-                        "authors": authors,
+                        "authors": authors_str,
                         "year": metadata.get("year") if metadata else None,
                         "doc_id": doc_id,  # First chunk ID for reference
                     })
 
         # Sort by year (descending) and title
+        # Convert year to int (stored as string in metadata)
         matching_papers.sort(
-            key=lambda p: (-(p["year"] or 0), p["title"].lower())
+            key=lambda p: (-(int(p["year"] or 0)), p["title"].lower())
         )
 
         # Apply pagination
         total_papers = len(matching_papers)
         paginated_papers = matching_papers[offset:offset + limit]
+
+        # Log metadata quality statistics
+        logger.info(
+            f"Author search metadata quality: "
+            f"{documents_with_authors}/{total_documents} have authors, "
+            f"{documents_with_unknown} have placeholder, "
+            f"{documents_with_empty} are empty"
+        )
 
         return {
             "author": author_name,
@@ -463,6 +509,13 @@ def search_by_author(author_name: str, limit: int = 50, offset: int = 0) -> Dict
             "returned": len(paginated_papers),
             "has_more": (offset + limit) < total_papers,
             "papers": paginated_papers,
+            "metadata_quality": {
+                "total_documents": total_documents,
+                "with_authors": documents_with_authors,
+                "with_unknown_placeholder": documents_with_unknown,
+                "completely_empty": documents_with_empty,
+                "quality_percentage": round((documents_with_authors / total_documents * 100), 1) if total_documents > 0 else 0
+            }
         }
 
     except Exception as e:

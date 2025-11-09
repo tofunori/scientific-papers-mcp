@@ -28,19 +28,45 @@ class Config(BaseSettings):
     # Collection management
     default_collection_name: str = "scientific_papers_voyage"  # Default ChromaDB collection (Voyage AI)
 
+    # Chroma Cloud configuration (hybrid mode: local + cloud)
+    use_chroma_cloud: bool = False  # Toggle between local PersistentClient and CloudClient
+    chroma_tenant: str = "61d5e32b-2b82-44c9-8dec-a8aff28ea279"  # Chroma Cloud tenant ID
+    chroma_database: str = "Scientific"  # Chroma Cloud database name
+    chroma_api_key: str = ""  # Chroma Cloud API key (from CHROMA_API_KEY env var)
+
     # Search settings
     default_top_k: int = 10
     default_alpha: float = 0.5  # Hybrid search balance (0=keyword, 1=semantic)
 
+    # RRF (Reciprocal Rank Fusion) settings for improved hybrid search
+    use_rrf: bool = True  # Use proper RRF formula instead of linear combination
+    rrf_k_parameter: int = 60  # RRF smoothing parameter (higher = more uniform ranking)
+    rrf_dense_weight: float = 0.7  # Weight for dense semantic search results
+    rrf_sparse_weight: float = 0.3  # Weight for sparse keyword search results
+
+    # Sparse vector / Cloud Search API settings
+    use_cloud_search_api: bool = False  # Use Chroma Cloud Search() API with native sparse vectors
+    sparse_vector_enabled: bool = True  # Enable sparse vectors (BM25 local, SPLADE cloud)
+
+    # Cloud sparse vector configuration (SPLADE - Sparse Lexical and Semantic Embeddings)
+    cloud_sparse_embedding_model: str = "splade-cocondenser-ensembledistil"  # SPLADE model for cloud
+    cloud_sparse_embedding_dims: int = 30522  # Vocabulary size for SPLADE (BERT vocab)
+    enable_cloud_search_api: bool = False  # Enable Chroma Cloud Search() API (requires Chroma v0.4.0+)
+
+    # Hybrid local + cloud sync settings
+    sync_to_cloud: bool = True  # Automatically sync indexed documents to Chroma Cloud
+    default_search_source: str = "local"  # Default search source: 'local' (fast) or 'cloud' (remote)
+
     # Chunking settings (Optimized for contextual embedding models)
-    # - 512 tokens optimal for scientific papers
+    # - 1024 tokens optimal for scientific papers with voyage-context-3
+    # - voyage-context-3 has 32K context window, reduces chunking strategy sensitivity
     # - Overlap depends on embedding model:
-    #   * Voyage AI: 0 overlap (contextual_embed handles context)
+    #   * Voyage AI: 100 tokens overlap (captures transitions between sections)
     #   * Jina-v4: 100 tokens (~20%) (late_chunking preserves context)
     #   * Local models: 100 tokens (~20%) (no contextual features)
     chunking_enabled: bool = True
-    chunk_size: int = 512  # tokens per chunk (optimal for scientific papers)
-    chunk_overlap: int = 100  # token overlap for Jina/local (set to 0 for Voyage)
+    chunk_size: int = 1024  # tokens per chunk (optimal for scientific papers + voyage-context-3)
+    chunk_overlap: int = 100  # token overlap for transitions
     chunk_encoding: str = "cl100k_base"  # Token encoding (GPT tokenizer)
 
     # Contextual chunking: Group chunks by document for contextual embeddings
@@ -67,6 +93,12 @@ class Config(BaseSettings):
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     reranker_top_k: int = 50  # Retrieve 50 candidates before reranking
 
+    # Cohere Rerank Configuration
+    use_cohere_rerank: bool = True  # Use Cohere Rerank API instead of local cross-encoder
+    cohere_api_key: str = ""
+    cohere_model: str = "rerank-v3.5"
+    cohere_top_k: int = 10  # Number of results to return from Cohere
+
     # Indexing
     auto_index_on_start: bool = False
     watch_directory: bool = True
@@ -88,14 +120,33 @@ class Config(BaseSettings):
     )
 
     def validate_paths(self) -> None:
-        """Validate that required paths exist"""
+        """Validate that required paths exist and cloud credentials if needed"""
+        # Validate local paths (always needed for Zotero documents)
         if not self.documents_path.exists():
             raise FileNotFoundError(
                 f"Documents path does not exist: {self.documents_path}"
             )
 
-        # Create chroma path if it doesn't exist
-        self.chroma_path.mkdir(parents=True, exist_ok=True)
+        # Cloud mode: validate Chroma Cloud credentials
+        if self.use_chroma_cloud:
+            if not self.chroma_api_key:
+                raise ValueError(
+                    "Chroma Cloud API key is required when use_chroma_cloud=True. "
+                    "Set CHROMA_API_KEY environment variable or configure in .env file."
+                )
+            if not self.chroma_tenant:
+                raise ValueError(
+                    "Chroma Cloud tenant is required when use_chroma_cloud=True. "
+                    "Set CHROMA_TENANT environment variable or configure in .env file."
+                )
+            if not self.chroma_database:
+                raise ValueError(
+                    "Chroma Cloud database is required when use_chroma_cloud=True. "
+                    "Set CHROMA_DATABASE environment variable or configure in .env file."
+                )
+        else:
+            # Local mode: create chroma path if it doesn't exist
+            self.chroma_path.mkdir(parents=True, exist_ok=True)
 
 
 # Global config instance
