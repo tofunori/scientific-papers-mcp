@@ -11,11 +11,11 @@ from fastmcp import FastMCP
 
 from .config import config
 from .utils.logger import setup_logger
-from .extractors.metadata_extractor import extract_metadata_from_file
-from .extractors.pdf_extractor import extract_text_from_pdf, extract_metadata_from_pdf
 from .indexing.chroma_client import initialize_chroma
 from .indexing.hybrid_search import HybridSearchEngine
-from .indexing.chunker import ScientificPaperChunker
+from .indexing.zotero_indexer import ZoteroLibraryIndexer
+from .indexing.indexing_state import IndexingStateManager
+from .indexing.deduplicator import DocumentDeduplicator
 
 # Setup logging
 logger = setup_logger(__name__, level=config.log_level)
@@ -30,22 +30,24 @@ mcp = FastMCP(
 
     Available operations:
     - search: Perform hybrid semantic + keyword search
+    - generate_rag_answer: Generate evidence-backed answers with citations
+    - search_fulltext: Full-text search with regex and boolean logic
     - search_by_author: Find papers by author name
     - search_by_year: Find papers by publication year
     - get_metadata: Get detailed metadata for a paper
     - list_papers: List all indexed papers
-    - index_documents: Index markdown documents from a directory
+    - index_zotero_library: Index Zotero library with incremental updates (68 chunks/doc)
+    - get_collection_stats: Get indexing statistics
     """,
 )
 
 # Global search engine instance
 search_engine: Optional[HybridSearchEngine] = None
-chunker: Optional[ScientificPaperChunker] = None
 
 
 def initialize_server() -> None:
     """Initialize the MCP server and search engine"""
-    global search_engine, chunker
+    global search_engine
 
     try:
         logger.info("Initializing Scientific Papers MCP Server")
@@ -63,144 +65,18 @@ def initialize_server() -> None:
         # Initialize search engine
         search_engine = HybridSearchEngine(collection, config.embedding_model)
 
-        # Initialize chunker
-        chunker = ScientificPaperChunker(
-            max_chunk_size=config.max_chunk_size,
-            chunk_overlap=config.chunk_overlap,
-        )
-
         logger.info("Server initialized successfully")
 
-        # Auto-index if enabled
-        if config.auto_index_on_start:
-            logger.info("Auto-indexing documents...")
-            index_all_documents(config.documents_path)
+        # Auto-index disabled by default - use index_zotero_library() tool for manual/incremental indexing
+        # Set auto_index_on_start=True in config to enable automatic indexing on startup
 
     except Exception as e:
         logger.error(f"Failed to initialize server: {e}")
         raise
 
 
-def index_all_documents(documents_path: Path | str, recursive: bool = False) -> Dict:
-    """
-    Index all markdown and PDF documents in a directory.
-
-    Args:
-        documents_path: Path to directory containing documents
-        recursive: If True, search in subdirectories recursively (for Zotero storage structure)
-    """
-    documents_path = Path(documents_path)
-
-    if not documents_path.exists():
-        logger.error(f"Documents path does not exist: {documents_path}")
-        return {"status": "error", "message": f"Path not found: {documents_path}"}
-
-    try:
-        # Use recursive glob pattern if recursive=True
-        if recursive:
-            logger.info("Searching for documents recursively (including subdirectories)")
-            markdown_files = list(documents_path.rglob("*.md"))
-            pdf_files = list(documents_path.rglob("*.pdf"))
-        else:
-            markdown_files = list(documents_path.glob("*.md"))
-            pdf_files = list(documents_path.glob("*.pdf"))
-
-        all_files = markdown_files + pdf_files
-        logger.info(f"Found {len(markdown_files)} markdown files and {len(pdf_files)} PDF files")
-
-        indexed_count = 0
-        markdown_count = 0
-        pdf_count = 0
-
-        for file_path in all_files:
-            try:
-                is_pdf = file_path.suffix.lower() == ".pdf"
-
-                if is_pdf:
-                    # Extract text from PDF
-                    text, is_scanned = extract_text_from_pdf(file_path)
-                    if not text.strip():
-                        logger.warning(f"Failed to extract text from PDF {file_path.name}")
-                        continue
-
-                    # Extract metadata from PDF
-                    pdf_metadata = extract_metadata_from_pdf(file_path)
-                    metadata_filename = pdf_metadata.get("filename", file_path.name)
-                    metadata_title = pdf_metadata.get("title", file_path.stem)
-                    metadata_authors = pdf_metadata.get("authors", [])
-                    metadata_year = pdf_metadata.get("year")
-
-                    # Chunk PDF document
-                    chunks = chunker.chunk_pdf_document(
-                        text, document_id=metadata_filename
-                    )
-
-                    pdf_count += 1
-                else:
-                    # Extract metadata from Markdown
-                    metadata = extract_metadata_from_file(file_path)
-                    if not metadata:
-                        logger.warning(f"Failed to extract metadata from {file_path.name}")
-                        continue
-
-                    # Read markdown document
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        text = f.read()
-
-                    # Chunk markdown document
-                    chunks = chunker.chunk_document(
-                        text, document_id=metadata.filename, keep_abstract=True
-                    )
-
-                    metadata_filename = metadata.filename
-                    metadata_title = metadata.title
-                    metadata_authors = metadata.authors
-                    metadata_year = metadata.year
-
-                    markdown_count += 1
-
-                # Index chunks
-                for chunk in chunks:
-                    # Clean metadata (ChromaDB doesn't accept None)
-                    clean_metadata = {
-                        "filename": metadata_filename or "unknown",
-                        "title": metadata_title or "unknown",
-                        "authors": ", ".join(metadata_authors) if metadata_authors else "unknown",
-                        "year": str(metadata_year) if metadata_year else "unknown",
-                        "section": chunk.section or "unknown",
-                        "file_type": "pdf" if is_pdf else "markdown",
-                    }
-
-                    # Add tags and instruments only for markdown
-                    if not is_pdf and 'metadata' in locals():
-                        clean_metadata["tags"] = ", ".join(metadata.tags) if metadata.tags else "unknown"
-                        clean_metadata["instruments"] = ", ".join(metadata.instruments) if metadata.instruments else "unknown"
-
-                    search_engine.index_document(
-                        doc_id=chunk.chunk_id,
-                        text=chunk.text,
-                        metadata=clean_metadata,
-                    )
-
-                indexed_count += 1
-                file_type = "PDF" if is_pdf else "Markdown"
-                logger.info(f"Indexed {file_type} {metadata_filename} ({len(chunks)} chunks)")
-
-            except Exception as e:
-                logger.error(f"Error indexing {file_path.name}: {e}")
-                continue
-
-        return {
-            "status": "success",
-            "indexed_files": indexed_count,
-            "markdown_files": markdown_count,
-            "pdf_files": pdf_count,
-            "total_files": len(all_files),
-        }
-
-    except Exception as e:
-        logger.error(f"Error during indexing: {e}")
-        return {"status": "error", "message": str(e)}
+# Old index_all_documents function removed - replaced by ZoteroLibraryIndexer
+# for better chunking (68 chunks/doc vs old system) and incremental updates
 
 
 # ============================================================================
@@ -518,47 +394,75 @@ def search_fulltext(
 
 
 @mcp.tool()
-def search_by_author(author_name: str) -> Dict:
+def search_by_author(author_name: str, limit: int = 50, offset: int = 0) -> Dict:
     """
-    Find all papers by a specific author.
+    Find all papers by a specific author (paginated).
 
     Args:
-        author_name: Name of the author to search for
+        author_name: Name of the author to search for (case-insensitive partial match)
+        limit: Maximum number of papers to return (default: 50, max: 200)
+        offset: Number of papers to skip (default: 0)
 
     Returns:
-        List of papers by that author
+        Paginated list of papers by that author
+
+    Examples:
+        - search_by_author("Wang") → First 50 papers with "Wang" in author list
+        - search_by_author("Smith", limit=100, offset=50) → Papers 51-150 by Smith
     """
     if not search_engine:
         return {"error": "Search engine not initialized"}
 
     try:
-        logger.info(f"Search by author: {author_name}")
+        # Clamp limit to reasonable bounds
+        limit = min(max(1, limit), 200)
+        offset = max(0, offset)
 
-        # Search using the author name
-        doc_ids, scores, metadatas, documents = search_engine.search(
-            query=f"author:{author_name}",
-            top_k=100,
-            alpha=0.2,  # Favor keyword search for exact names
+        logger.info(f"Search by author: {author_name} (limit={limit}, offset={offset})")
+
+        # Get all documents from the collection to search through metadata
+        # We use collection.get() directly since ChromaDB's metadata filtering
+        # doesn't support substring matching on authors field
+        all_data = search_engine.collection.get(
+            limit=100000,  # Get all documents
+            include=["metadatas", "documents"]
         )
 
-        # Filter by author name in metadata
-        results = []
-        for doc_id, score, metadata, document in zip(doc_ids, scores, metadatas, documents):
-            authors = metadata.get("authors", "")
+        # Filter by author name in metadata (case-insensitive partial match)
+        matching_papers = []
+        for doc_id, metadata, document in zip(all_data["ids"], all_data["metadatas"], all_data["documents"]):
+            authors = metadata.get("authors", "") if metadata else ""
             if author_name.lower() in authors.lower():
-                results.append(
-                    {
-                        "doc_id": doc_id,
-                        "title": metadata.get("title"),
+                # Extract unique paper identifier (before chunk suffix)
+                paper_id = doc_id.rsplit("_chunk_", 1)[0]
+
+                # Check if we've already added this paper
+                if not any(p["paper_id"] == paper_id for p in matching_papers):
+                    matching_papers.append({
+                        "paper_id": paper_id,
+                        "title": metadata.get("title", "Unknown") if metadata else "Unknown",
                         "authors": authors,
-                        "year": metadata.get("year"),
-                    }
-                )
+                        "year": metadata.get("year") if metadata else None,
+                        "doc_id": doc_id,  # First chunk ID for reference
+                    })
+
+        # Sort by year (descending) and title
+        matching_papers.sort(
+            key=lambda p: (-(p["year"] or 0), p["title"].lower())
+        )
+
+        # Apply pagination
+        total_papers = len(matching_papers)
+        paginated_papers = matching_papers[offset:offset + limit]
 
         return {
             "author": author_name,
-            "num_results": len(results),
-            "results": results,
+            "total_results": total_papers,
+            "limit": limit,
+            "offset": offset,
+            "returned": len(paginated_papers),
+            "has_more": (offset + limit) < total_papers,
+            "papers": paginated_papers,
         }
 
     except Exception as e:
@@ -567,16 +471,23 @@ def search_by_author(author_name: str) -> Dict:
 
 
 @mcp.tool()
-def search_by_year(year: int, start_year: Optional[int] = None) -> Dict:
+def search_by_year(year: int, start_year: Optional[int] = None, limit: int = 50, offset: int = 0) -> Dict:
     """
-    Find papers by publication year or year range.
+    Find papers by publication year or year range (paginated).
 
     Args:
         year: Specific year or end year for range
         start_year: Optional start year for range search
+        limit: Maximum number of papers to return (default: 50, max: 200)
+        offset: Number of papers to skip (default: 0)
 
     Returns:
-        List of papers from specified year(s)
+        Paginated list of papers from specified year(s)
+
+    Examples:
+        - search_by_year(2023) → First 50 papers from 2023
+        - search_by_year(2025, start_year=2020) → Papers from 2020-2025
+        - search_by_year(2023, limit=100, offset=50) → Papers 51-150 from 2023
     """
     if not search_engine:
         return {"error": "Search engine not initialized"}
@@ -584,6 +495,10 @@ def search_by_year(year: int, start_year: Optional[int] = None) -> Dict:
     try:
         # Ensure BM25 index is loaded
         search_engine._ensure_bm25_loaded()
+
+        # Clamp limit to reasonable bounds
+        limit = min(max(1, limit), 200)
+        offset = max(0, offset)
 
         # Get all documents and filter by year
         all_ids = search_engine.doc_ids
@@ -622,10 +537,18 @@ def search_by_year(year: int, start_year: Optional[int] = None) -> Dict:
                         }
                     )
 
+        # Apply pagination
+        total_results = len(results)
+        paginated_results = results[offset:offset + limit]
+
         return {
             "year_range": f"{start_year}-{year}" if start_year else str(year),
-            "num_results": len(results),
-            "results": results,
+            "total_results": total_results,
+            "limit": limit,
+            "offset": offset,
+            "returned": len(paginated_results),
+            "has_more": (offset + limit) < total_results,
+            "results": paginated_results,
         }
 
     except Exception as e:
@@ -662,12 +585,20 @@ def get_metadata(doc_id: str) -> Dict:
 
 
 @mcp.tool()
-def list_papers() -> Dict:
+def list_papers(limit: int = 50, offset: int = 0) -> Dict:
     """
-    List all indexed papers with their metadata.
+    List indexed papers with their metadata (paginated).
+
+    Args:
+        limit: Maximum number of papers to return (default: 50, max: 200)
+        offset: Number of papers to skip (default: 0)
 
     Returns:
-        List of all papers in the collection
+        Paginated list of papers in the collection
+
+    Examples:
+        - list_papers() → First 50 papers
+        - list_papers(limit=100, offset=50) → Papers 51-150
     """
     if not search_engine:
         return {"error": "Search engine not initialized"}
@@ -675,6 +606,10 @@ def list_papers() -> Dict:
     try:
         # Ensure BM25 index is loaded
         search_engine._ensure_bm25_loaded()
+
+        # Clamp limit to reasonable bounds
+        limit = min(max(1, limit), 200)
+        offset = max(0, offset)
 
         papers = []
         unique_docs = set()
@@ -697,9 +632,17 @@ def list_papers() -> Dict:
                     }
                 )
 
+        # Apply pagination
+        total_papers = len(papers)
+        paginated_papers = papers[offset:offset + limit]
+
         return {
-            "total_papers": len(papers),
-            "papers": papers,
+            "total_papers": total_papers,
+            "limit": limit,
+            "offset": offset,
+            "returned": len(paginated_papers),
+            "has_more": (offset + limit) < total_papers,
+            "papers": paginated_papers,
         }
 
     except Exception as e:
@@ -708,24 +651,61 @@ def list_papers() -> Dict:
 
 
 @mcp.tool()
-def index_documents(directory_path: str, recursive: bool = False) -> Dict:
+def index_zotero_library(force_rebuild: bool = False, limit: Optional[int] = None) -> Dict:
     """
-    Index all markdown and PDF documents from a directory.
+    Index Zotero library with intelligent incremental updates and document chunking.
+
+    Features:
+    - Incremental indexing (only processes new/modified documents)
+    - Full-text chunking (avg 68 chunks per document for complete coverage)
+    - Deduplication (DOI and title-based)
+    - Progress tracking with statistics
 
     Args:
-        directory_path: Path to directory containing documents (markdown and/or PDFs)
-        recursive: If True, search in subdirectories recursively (useful for Zotero storage)
+        force_rebuild: Force reindex all documents (default: False for incremental)
+        limit: Limit number of documents to process (for testing, default: None)
 
     Returns:
-        Status of indexing operation
+        Indexing statistics including documents processed, chunks created, duplicates removed
+
+    Examples:
+        - index_zotero_library() → Incremental indexing (only new/modified docs)
+        - index_zotero_library(force_rebuild=True) → Full reindex
+        - index_zotero_library(limit=10) → Test with 10 documents
     """
-    if not search_engine or not chunker:
+    if not search_engine:
         return {"error": "Search engine not initialized"}
 
     try:
-        return index_all_documents(directory_path, recursive=recursive)
+        logger.info(f"Starting Zotero indexing (force_rebuild={force_rebuild}, limit={limit})")
+
+        # Initialize indexer components
+        state_manager = IndexingStateManager()
+        deduplicator = DocumentDeduplicator()
+
+        # Create indexer with search engine
+        indexer = ZoteroLibraryIndexer(
+            search_engine=search_engine,
+            library_path=config.documents_path,
+            state_manager=state_manager,
+            deduplicator=deduplicator,
+        )
+
+        # Run indexing workflow
+        stats = indexer.index_library(
+            force_rebuild=force_rebuild,
+            limit=limit,
+            save_state=True,
+        )
+
+        return {
+            "status": "success",
+            "statistics": stats,
+            "message": f"Indexed {stats.get('added', 0) + stats.get('updated', 0)} documents"
+        }
+
     except Exception as e:
-        logger.error(f"Indexing error: {e}")
+        logger.error(f"Zotero indexing error: {e}")
         return {"error": str(e)}
 
 

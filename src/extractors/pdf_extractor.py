@@ -1,9 +1,11 @@
 """PDF extraction with OCR support for scientific documents"""
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 import logging
 import re
+import base64
+import io
 
 try:
     import fitz  # PyMuPDF
@@ -49,15 +51,116 @@ def is_pdf_scanned(doc: "fitz.Document") -> bool:
         return False
 
 
-def extract_text_from_pdf(pdf_path: Path) -> Tuple[str, bool]:
+def extract_images_from_pdf(pdf_path: Path, max_images_per_page: int = 5, min_width: int = 100, min_height: int = 100) -> List[Dict]:
     """
-    Extract text from PDF with automatic OCR detection
+    Extract images from PDF and convert to base64 for multimodal embedding.
 
     Args:
         pdf_path: Path to PDF file
+        max_images_per_page: Maximum images to extract per page (to avoid too many small images)
+        min_width: Minimum image width in pixels
+        min_height: Minimum image height in pixels
 
     Returns:
-        Tuple of (extracted_text, is_ocr_needed)
+        List of dicts with keys: {page_num, image_base64, width, height}
+
+    Raises:
+        ImportError: If PyMuPDF not installed
+        FileNotFoundError: If PDF file not found
+    """
+    if not PYMUPDF_AVAILABLE:
+        raise ImportError(
+            "PyMuPDF (pymupdf) is required for PDF extraction. "
+            "Install with: pip install pymupdf"
+        )
+
+    pdf_path = Path(pdf_path)
+    if not pdf_path.exists():
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+
+    logger.info(f"Extracting images from PDF: {pdf_path.name}")
+
+    extracted_images = []
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        for page_num, page in enumerate(doc):
+            try:
+                # Get all images on this page
+                image_list = page.get_images(full=True)
+
+                # Limit number of images per page
+                images_on_page = 0
+
+                for img_index, img_info in enumerate(image_list):
+                    if images_on_page >= max_images_per_page:
+                        break
+
+                    try:
+                        # Extract image data
+                        xref = img_info[0]
+                        base_image = doc.extract_image(xref)
+
+                        # Check image size
+                        if base_image["width"] < min_width or base_image["height"] < min_height:
+                            continue
+
+                        # Get image bytes
+                        image_bytes = base_image["image"]
+
+                        # Convert to base64
+                        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+                        # Get image format (png, jpeg, etc.)
+                        image_ext = base_image["ext"]
+
+                        # Create data URI format for Jina API
+                        mime_type = f"image/{image_ext}"
+                        data_uri = f"data:{mime_type};base64,{image_base64}"
+
+                        extracted_images.append({
+                            "page_num": page_num,
+                            "image_base64": data_uri,
+                            "width": base_image["width"],
+                            "height": base_image["height"],
+                            "format": image_ext
+                        })
+
+                        images_on_page += 1
+
+                    except Exception as e:
+                        logger.warning(f"Error extracting image {img_index} from page {page_num + 1}: {e}")
+                        continue
+
+            except Exception as e:
+                logger.error(f"Error processing images on page {page_num + 1}: {e}")
+                continue
+
+        doc.close()
+
+        logger.info(f"Successfully extracted {len(extracted_images)} images from PDF")
+
+        return extracted_images
+
+    except Exception as e:
+        logger.error(f"Error opening PDF {pdf_path}: {e}")
+        raise
+
+
+def extract_text_from_pdf(pdf_path: Path, extract_images: bool = True) -> Tuple[str, bool, List[Dict]]:
+    """
+    Extract text and images from PDF with automatic OCR detection
+
+    Args:
+        pdf_path: Path to PDF file
+        extract_images: Whether to extract images for multimodal embedding (default: True)
+
+    Returns:
+        Tuple of (extracted_text, is_ocr_needed, images_list)
+        - extracted_text: Full text content
+        - is_ocr_needed: Whether PDF is scanned
+        - images_list: List of extracted images with base64 data and page numbers
 
     Raises:
         ImportError: If PyMuPDF not installed
@@ -113,7 +216,16 @@ def extract_text_from_pdf(pdf_path: Path) -> Tuple[str, bool]:
         result_text = "\n\n".join(all_text)
         logger.info(f"Successfully extracted {len(result_text)} characters from PDF")
 
-        return result_text, is_scanned
+        # Extract images if requested
+        images_list = []
+        if extract_images:
+            try:
+                images_list = extract_images_from_pdf(pdf_path)
+            except Exception as e:
+                logger.warning(f"Failed to extract images from PDF: {e}")
+                images_list = []
+
+        return result_text, is_scanned, images_list
 
     except Exception as e:
         logger.error(f"Error opening PDF {pdf_path}: {e}")
@@ -179,11 +291,16 @@ def extract_metadata_from_pdf(pdf_path: Path) -> dict:
         "journal": None,
         "doi": None,
         "abstract": None,
+        "keywords": [],
+        "page_count": None,
     }
 
     try:
         doc = fitz.open(pdf_path)
         pdf_metadata = doc.metadata
+
+        # Extract page count
+        metadata["page_count"] = len(doc)
 
         # Extract from native PDF metadata
         if pdf_metadata:
@@ -198,7 +315,9 @@ def extract_metadata_from_pdf(pdf_path: Path) -> dict:
                 metadata["subject"] = pdf_metadata["subject"].strip()
 
             if pdf_metadata.get("keywords"):
-                metadata["keywords"] = pdf_metadata["keywords"].strip()
+                keywords_str = pdf_metadata["keywords"].strip()
+                # Parse keywords from PDF metadata (usually comma or semicolon separated)
+                metadata["keywords"] = [k.strip() for k in re.split(r"[;,]", keywords_str) if k.strip()]
 
         # Extract year from PDF creation/modification date
         if pdf_metadata and pdf_metadata.get("modDate"):
@@ -245,6 +364,11 @@ def extract_metadata_from_pdf(pdf_path: Path) -> dict:
                 abstract = _extract_abstract_from_text(text_content)
                 if abstract:
                     metadata["abstract"] = abstract
+
+            if not metadata["keywords"]:
+                keywords = _extract_keywords_from_text(text_content)
+                if keywords:
+                    metadata["keywords"] = keywords
 
         # Fallback to filename if still no title
         if not metadata["title"]:
@@ -394,34 +518,132 @@ def _extract_journal_from_text(text: str) -> Optional[str]:
 
 
 def _extract_doi_from_text(text: str) -> Optional[str]:
-    """Extract DOI from document text"""
-    # DOI pattern
-    doi_pattern = r"(?:doi:|DOI:?\s*)(?:https?://doi\.org/)?([0-9.]+/\S+)"
+    """
+    Extract and validate DOI from document text
 
-    match = re.search(doi_pattern, text[:2000], re.IGNORECASE)
-    if match:
-        doi = match.group(1)
-        # Clean up trailing punctuation
-        doi = doi.rstrip(".,;)")
-        return doi
+    DOI format: 10.xxxx/yyyy (where xxxx is publisher, yyyy is identifier)
+    """
+    # Enhanced DOI patterns
+    doi_patterns = [
+        r"(?:doi:|DOI:?\s*)(?:https?://doi\.org/)?([0-9.]+/[^\s\]]+)",
+        r"https?://doi\.org/([0-9.]+/[^\s\]]+)",
+        r"\b(10\.\d{4,}/[^\s\]]+)",  # Direct DOI without prefix
+    ]
+
+    for pattern in doi_patterns:
+        match = re.search(pattern, text[:2000], re.IGNORECASE)
+        if match:
+            doi = match.group(1)
+            # Clean up trailing punctuation
+            doi = doi.rstrip(".,;)]\n")
+
+            # Validate DOI format: must start with 10.xxxx/
+            if _validate_doi(doi):
+                return doi
 
     return None
+
+
+def _validate_doi(doi: str) -> bool:
+    """
+    Validate DOI format
+
+    Valid DOI format: 10.xxxx/yyyy
+    - Must start with "10."
+    - Must have at least 4 digits after "10."
+    - Must contain a forward slash
+    - Must have content after the slash
+    """
+    if not doi:
+        return False
+
+    # Basic format check
+    if not doi.startswith("10."):
+        return False
+
+    if "/" not in doi:
+        return False
+
+    parts = doi.split("/", 1)
+    if len(parts) != 2:
+        return False
+
+    prefix, suffix = parts
+
+    # Prefix must be 10.xxxx (at least 4 digits)
+    try:
+        prefix_num = prefix.split(".", 1)[1]
+        if len(prefix_num) < 4 or not prefix_num.isdigit():
+            return False
+    except (IndexError, AttributeError):
+        return False
+
+    # Suffix must not be empty and have reasonable length
+    if not suffix or len(suffix) > 200:
+        return False
+
+    return True
 
 
 def _extract_abstract_from_text(text: str) -> Optional[str]:
-    """Extract abstract from document text"""
+    """
+    Extract abstract from document text
+
+    Looks for Abstract section in first 3000 characters
+    """
     abstract_patterns = [
-        r"(?:^|\n)\s*Abstract\s*\n(.+?)(?:\n\s*(?:Introduction|Keywords|References|$))",
-        r"(?:^|\n)ABSTRACT\s*\n(.+?)(?:\n\s*(?:INTRODUCTION|KEYWORDS|$))",
+        r"(?:^|\n)\s*Abstract[:\s]*\n(.+?)(?:\n\s*(?:Introduction|Keywords|1\.|References|$))",
+        r"(?:^|\n)ABSTRACT[:\s]*\n(.+?)(?:\n\s*(?:INTRODUCTION|KEYWORDS|1\.|$))",
+        r"(?:^|\n)Summary[:\s]*\n(.+?)(?:\n\s*(?:Introduction|Keywords|1\.|$))",
     ]
 
     for pattern in abstract_patterns:
-        match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+        match = re.search(pattern, text[:3000], re.IGNORECASE | re.DOTALL)
         if match:
             abstract = match.group(1).strip()
-            # Limit to first 500 characters
-            if len(abstract) > 500:
-                abstract = abstract[:500].rsplit(" ", 1)[0] + "..."
-            return abstract
+            # Remove extra whitespace and line breaks
+            abstract = " ".join(abstract.split())
+            # Limit to first 1000 characters
+            if len(abstract) > 1000:
+                abstract = abstract[:1000].rsplit(" ", 1)[0] + "..."
+            if len(abstract) > 50:  # Must be substantive
+                return abstract
 
     return None
+
+
+def _extract_keywords_from_text(text: str) -> list:
+    """
+    Extract keywords/key terms from document text
+
+    Looks for Keywords section after abstract
+    """
+    keyword_patterns = [
+        r"(?:Keywords|Key\s*words|Key\s*terms)[:\s]*(.+?)(?:\n\s*(?:Introduction|1\.|$))",
+        r"(?:KEYWORDS|KEY\s*WORDS)[:\s]*(.+?)(?:\n\s*(?:INTRODUCTION|1\.|$))",
+    ]
+
+    for pattern in keyword_patterns:
+        match = re.search(pattern, text[:3000], re.IGNORECASE | re.DOTALL)
+        if match:
+            keywords_str = match.group(1).strip()
+            # Clean up and split
+            keywords_str = keywords_str.replace("\n", " ")
+            keywords_str = " ".join(keywords_str.split())
+
+            # Split by common separators
+            separators = [";", ",", "·", "•"]
+            keywords = []
+            for sep in separators:
+                if sep in keywords_str:
+                    keywords = [k.strip() for k in keywords_str.split(sep) if k.strip()]
+                    break
+
+            # If no separators found, treat as single keyword or space-separated
+            if not keywords:
+                keywords = [k.strip() for k in keywords_str.split() if len(k.strip()) > 2]
+
+            # Limit to first 10 keywords
+            return keywords[:10]
+
+    return []

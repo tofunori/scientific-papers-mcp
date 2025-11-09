@@ -156,5 +156,5 @@ def initialize_chroma(
         Chroma collection object
     """
     manager = ChromaClientManager(chroma_path, embedding_model)
-    collection = manager.get_or_create_collection("scientific_papers")
+    collection = manager.get_or_create_collection(config.default_collection_name)
     return collection

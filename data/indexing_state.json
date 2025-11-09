@@ -1,0 +1,832 @@
+{
+  "indexed_files": {
+    "C:\\Users\\thier\\Zotero\\storage\\24G222HS\\Gardner et Sharp - 2010 - A review of snow and ice albedo and the development of a new physically based broadband albedo param.pdf": {
+      "date_modified": "2025-10-24T16:29:18.025448",
+      "doc_id": "37258D0D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:24.958849"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\2DDR8JUQ\\Chen et al. - 2019 - The FireWork v2.0 air quality forecast system with biomass burning emissions from the Canadian Fores.pdf": {
+      "date_modified": "2025-05-07T21:34:15.256000",
+      "doc_id": "55458EB6",
+      "doi": "10.5194/gmd-12-3283-2019",
+      "date_indexed": "2025-11-08T15:06:25.113194"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\35K7B8P9\\Zhang et al. - 2025 - Emergy-based valuation of glacier ecosystem services A case from the Tibetan Plateau.pdf": {
+      "date_modified": "2025-10-03T14:37:19.002685",
+      "doc_id": "283021F7",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.205282"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\3G6UDT95\\Kaspari et al. - 2015 - Accelerated glacier melt on Snow Dome, Mount Olympus, Washington, USA, due to deposition of black ca.pdf": {
+      "date_modified": "2025-06-04T15:24:15.614000",
+      "doc_id": "A445CE30",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.270456"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\3I2XXNS3\\Carenzo et al. - 2009 - Assessing the transferability and robustness of an enhanced temperature-index glacier-melt model.pdf": {
+      "date_modified": "2025-09-09T17:56:10.222171",
+      "doc_id": "257B10DF",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.363002"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\4NWEQ5DI\\Feng et al. - 2024 - Remote sensing of ice albedo using harmonized Landsat and Sentinel 2 datasets validation.pdf": {
+      "date_modified": "2025-06-12T09:36:31.208000",
+      "doc_id": "71518C49",
+      "doi": "10.1080/01431161.2023.2291000",
+      "date_indexed": "2025-11-08T15:06:25.448845"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\57TADKWB\\Huss et Hock - 2018 - Global-scale hydrological response to future glacier mass loss.pdf": {
+      "date_modified": "2025-10-13T09:55:02.453000",
+      "doc_id": "A0F04684",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.509276"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\5HG83Q3Z\\Shannon et al. - 2023 - A snow and glacier hydrological model for large catchments – case study for the Naryn River, central.pdf": {
+      "date_modified": "2025-09-10T13:00:52.880955",
+      "doc_id": "11709953",
+      "doi": "10.5194/hess-27-453-2023",
+      "date_indexed": "2025-11-08T15:06:25.646290"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\5L6EZ3HW\\Uecker et al. - 2020 - The Post-Wildfire Impact of Burn Severity and Age on Black Carbon Snow Deposition and Implications f.pdf": {
+      "date_modified": "2025-07-14T09:17:58.216000",
+      "doc_id": "DD3E5DBA",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.733083"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\5TJID6CZ\\Butt et al. - 2022 - Achieving Brazil's Deforestation Target Will Reduce Fire and Deliver Air Quality and Public Health B.pdf": {
+      "date_modified": "2025-05-07T21:34:21.830000",
+      "doc_id": "4A784DC2",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.855805"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\5TNYGPPJ\\Yin et al. - 2024 - Spatiotemporal Variation in Aerosol Optical Depth and Its Potential Effects on Snowmelt in High Moun.pdf": {
+      "date_modified": "2025-06-04T15:39:31.565000",
+      "doc_id": "0293AC82",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:25.920350"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\5VJXPJD4\\Naegeli et al. - 2017 - Cross-Comparison of Albedo Products for Glacier Surfaces Derived from Airborne and Satellite (Sentin.pdf": {
+      "date_modified": "2025-06-12T09:35:31.551000",
+      "doc_id": "8BFCDD99",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:26.028963"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\6MZ9GERB\\Hall et al. - 2002 - MODIS snow-cover products.pdf": {
+      "date_modified": "2025-05-29T11:18:44.908000",
+      "doc_id": "6E3FDDA2",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:26.077190"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\6VN7CLX7\\Gaillard et al. - 2025 - Improving large-scale snow albedo modeling using a climatology of light-absorbing particle depositio.pdf": {
+      "date_modified": "2025-10-30T14:33:42.357908",
+      "doc_id": "33FB0388",
+      "doi": "10.5194/tc-19-769-2025",
+      "date_indexed": "2025-11-08T15:06:26.219397"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\6XPQ75NX\\Ainslie et al. - 2022 - Operational Evaluation of a Wildfire Air Quality Model from a Forecaster Point of View.pdf": {
+      "date_modified": "2025-06-03T13:03:53.386000",
+      "doc_id": "C353B197",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:26.344773"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\6YVLX43N\\Moore et al. - 2009 - Glacier change in western North America influences on hydrology, geomorphic hazards and water quali.pdf": {
+      "date_modified": "2025-09-04T18:58:28.881000",
+      "doc_id": "3934C597",
+      "doi": "10.1002/hyp.7162",
+      "date_indexed": "2025-11-08T15:06:26.474879"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\7HFIB5BY\\Xiao et al. - 2023 - What drives the decrease of glacier surface albedo in High Mountain Asia in the past two decades.pdf": {
+      "date_modified": "2025-06-06T09:50:21.556000",
+      "doc_id": "DB975D8B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:26.555321"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\869M9TKG\\Gardner et al. - 2023 - Glacier Energy and Mass Balance (GEMB) a model of firn processes for cryosphere research.pdf": {
+      "date_modified": "2025-06-04T17:31:11.794000",
+      "doc_id": "2A34F04A",
+      "doi": "10.5194/gmd-16-2277-2023",
+      "date_indexed": "2025-11-08T15:06:26.695307"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\876WCW9Z\\Clason et al. - 2022 - Contribution of glaciers to water, energy and food security in mountain regions current perspective.pdf": {
+      "date_modified": "2025-09-14T11:55:23.857729",
+      "doc_id": "89251899",
+      "doi": "10.1017/aog.2023.14",
+      "date_indexed": "2025-11-08T15:06:26.734811"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\892QLB86\\Lapere et al. - 2023 - Meteorological export and deposition fluxes of black carbon on glaciers of the central Chilean Andes.pdf": {
+      "date_modified": "2025-05-28T14:16:59.887000",
+      "doc_id": "213AACE8",
+      "doi": "10.5194/acp-23-1749-2023",
+      "date_indexed": "2025-11-08T15:06:26.824498"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\8BVHCMLP\\Fitzpatrick et al. - 2017 - Surface Energy Balance Closure and Turbulent Flux Parameterization on a Mid-Latitude Mountain Glacie.pdf": {
+      "date_modified": "2025-10-22T13:49:42.759021",
+      "doc_id": "B9BD672A",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:26.922428"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\8EPMLWNC\\Dickinson - LAND SURFACE PROCESSES AND ENERGY BALANCE CLIMATE-SURFACE ALBEDOS AND.pdf": {
+      "date_modified": "2025-05-29T11:29:02.394000",
+      "doc_id": "263E55D7",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.028346"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\8GKQC3MC\\Bolch et al. - 2010 - Landsat-based inventory of glaciers in western Canada, 1985–2005.pdf": {
+      "date_modified": "2025-09-26T10:41:35.708023",
+      "doc_id": "E72A167B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.093785"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\8WDHBNW4\\Munoz-Alpizar et al. - 2017 - Multi-Year (2013–2016) PM2.5 Wildfire Pollution Exposure over North America as Determined from Opera.pdf": {
+      "date_modified": "2025-05-28T13:41:08.005000",
+      "doc_id": "24F12590",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.184453"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\94F7IUJ2\\Wal et al. - 1992 - A study of ablation variations on the tongue of Hintereisferner, Austrian Alps.pdf": {
+      "date_modified": "2025-10-22T21:20:22.689798",
+      "doc_id": "B4053742",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.231455"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\9FRC4W6P\\Williamson et al. - 2025 - Temperature mediated albedo decline portends acceleration of North American glacier mass loss.pdf": {
+      "date_modified": "2025-08-01T08:52:11.231000",
+      "doc_id": "D1A5F6AA",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.293488"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\9NSPWKU3\\Wu et al. - 2018 - Comparison of dry and wet deposition of particulate matter in near-surface waters during summer.pdf": {
+      "date_modified": "2025-06-03T13:10:21.231000",
+      "doc_id": "9ACC2F4D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.342904"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\9PD22LQ5\\technote_raqdpsfw_e.pdf": {
+      "date_modified": "2025-05-28T13:51:12.379000",
+      "doc_id": "360F06F8",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.386247"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\9PF7ANPI\\Parisien et al. - 2023 - Abrupt, climate-induced increase in wildfires in British Columbia since the mid-2000s.pdf": {
+      "date_modified": "2025-09-13T11:32:20.575262",
+      "doc_id": "B6AE5561",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.451943"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\9PUV3FN6\\Fraser - Environmentally Sound Management of End-of-Life Batteries from Electric-Drive Vehicles in North Amer.pdf": {
+      "date_modified": "2025-03-17T16:17:55.782000",
+      "doc_id": "8A568CBE",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.672874"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ADPI4LDL\\1982_RGSP.pdf": {
+      "date_modified": "2025-10-17T07:43:44.354811",
+      "doc_id": "626027EE",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:27.673873"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ALZ6JQDI\\Bond et al. - 2013 - Bounding the role of black carbon in the climate system A scientific assessment.pdf": {
+      "date_modified": "2025-10-26T19:38:09.511226",
+      "doc_id": "51D82FFA",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.609598"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ANNGYSKB\\remotesensing-13-04150.pdf": {
+      "date_modified": "2025-04-28T20:17:55.419000",
+      "doc_id": "11DD7B4D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.676313"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\AWEBRF25\\Kinnard et al. - 2021 - Mass balance modelling and climate sensitivity of Saskatchewan Glacier, western Canada.pdf": {
+      "date_modified": "2025-10-21T16:23:36.102000",
+      "doc_id": "FDDE0329",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.759885"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\B49KT8NR\\Bolibar et al. - 2022 - Nonlinear sensitivity of glacier mass balance to future climate change unveiled by deep learning.pdf": {
+      "date_modified": "2025-06-04T17:35:58.454000",
+      "doc_id": "BB0A8401",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.811232"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BFDC595R\\document_recyclagelithium_2014.pdf": {
+      "date_modified": "2025-03-17T16:34:41.846000",
+      "doc_id": "5E54D6DC",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.847549"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BGRJ6XP8\\Sicart et al. - 2008 - Glacier melt, air temperature, and energy balance in different climates The Bolivian Tropics, the F.pdf": {
+      "date_modified": "2025-10-20T19:48:57.345382",
+      "doc_id": "70FCE8D2",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.899549"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BGTA9J4E\\Xie et al. - 2024 - Ground‐Observed Snow Albedo Changes During Rain‐On‐Snow Events in Northern Alaska.pdf": {
+      "date_modified": "2025-10-26T16:26:22.526000",
+      "doc_id": "64A307FA",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.954832"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BKYEAH3V\\Liu et al. - 2023 - Responses of wildfire-induced global black carbon pollution and radiative forcing to climate change.pdf": {
+      "date_modified": "2025-07-14T09:23:33.801000",
+      "doc_id": "47ECE964",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:28.997000"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BTGALYVS\\Ren et al. - 2023 - Changes in glacier albedo and the driving factors in the Western Nyainqentanglha Mountains from 2001.pdf": {
+      "date_modified": "2025-06-04T15:33:41.858000",
+      "doc_id": "AEE77874",
+      "doi": "10.1017/jog.2023.45",
+      "date_indexed": "2025-11-08T15:06:29.058443"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\BVEN8PYC\\Bertoncini et al. - 2022 - Large-area high spatial resolution albedo retrievals from remote sensing for use in assessing the im.pdf": {
+      "date_modified": "2025-10-04T17:49:41.062538",
+      "doc_id": "08F0E980",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.146688"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\CCMRNVQE\\He et al. - 2019 - Enhanced Snow Absorption and Albedo Reduction by Dust-Snow Internal Mixing Modeling and Parameteriz.pdf": {
+      "date_modified": "2025-09-20T20:08:43.872648",
+      "doc_id": "45A610B8",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.223171"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\CN5H3WJU\\Stohl et al. - 2002 - On the pathways and timescales of intercontinental air pollution transport.pdf": {
+      "date_modified": "2025-10-23T21:48:55.923332",
+      "doc_id": "F1B637D9",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.274248"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\CRYXM4TN\\Tanada et al. - 2023 - Aerosol Optical Properties of Extreme Global Wildfires and Estimated Radiative Forcing With GCOM-C S.pdf": {
+      "date_modified": "2025-08-23T22:16:01.964552",
+      "doc_id": "E9EA9525",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.341562"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\DN3YVSNV\\Majdzadeh et al. - 2022 - Development of aerosol optical properties for improving the MESSy photolysis module in the GEM-MACH.pdf": {
+      "date_modified": "2025-06-04T09:53:52.421000",
+      "doc_id": "81D24139",
+      "doi": "10.5194/gmd-15-219-2022",
+      "date_indexed": "2025-11-08T15:06:29.445810"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\DU7CJ27Q\\Aoki et al. - 2011 - Physically based snow albedo model for calculating broadband albedos and the solar heating profile i.pdf": {
+      "date_modified": "2025-10-21T17:48:32.772755",
+      "doc_id": "71E429C0",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.543820"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\E6USG65H\\Song et Li - 2025 - Multi-Level Spectral Attention Network for Hyperspectral BRDF Reconstruction from Multi-Angle Multi-.pdf": {
+      "date_modified": "2025-05-28T14:47:37.768000",
+      "doc_id": "56C99E67",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.577123"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\E88M3CS4\\Gilardoni et al. - 2022 - Black carbon, organic carbon, and mineral dust in South American tropical glaciers A review.pdf": {
+      "date_modified": "2025-04-25T20:09:23.216000",
+      "doc_id": "56DCC3CA",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.639676"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\EGTCC8XG\\Byrne et al. - 2024 - Carbon emissions from the 2023 Canadian wildfires.pdf": {
+      "date_modified": "2025-09-14T19:05:29.200179",
+      "doc_id": "F07B9F24",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.684771"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ETX683UA\\Zhang et al. - 2025 - A numerical sensitivity study on the snow-darkening effect by black carbon deposition over the Arcti.pdf": {
+      "date_modified": "2025-07-14T09:20:16.649000",
+      "doc_id": "7B83B241",
+      "doi": "10.5194/acp-25-1-2025",
+      "date_indexed": "2025-11-08T15:06:29.787704"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\FANISBK3\\Brock et al. - 2000 - Measurement and parameterization of albedo variations at Haut Glacier d’Arolla, Switzerland.pdf": {
+      "date_modified": "2025-10-11T18:44:28.692590",
+      "doc_id": "8621E698",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.891652"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\FB7SJVYZ\\Naegeli et Huss - 2017 - Sensitivity of mountain glacier mass balance to changes in bare-ice albedo.pdf": {
+      "date_modified": "2025-06-04T15:42:49.611000",
+      "doc_id": "85967C14",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.934778"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\FKE7I4BH\\Taylor et al. - 2022 - Multi-Decadal Glacier Area and Mass Balance Change in the Southern Peruvian Andes.pdf": {
+      "date_modified": "2025-05-07T21:34:12.068000",
+      "doc_id": "CF0BEF9A",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:29.991603"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\G2Y5UYYW\\Yue et al. - 2022 - Spatiotemporal variations in surface albedo during the ablation season and linkages with the annual.pdf": {
+      "date_modified": "2025-06-04T15:12:55.148000",
+      "doc_id": "42A3D864",
+      "doi": "10.1080/17538947.2022.2148766",
+      "date_indexed": "2025-11-08T15:06:30.060184"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\G4HT2JJI\\Zhang et al. - 2020 - Estimation of Shortwave Solar Radiation on Clear-Sky Days for a Valley Glacier with Sentinel-2 Time.pdf": {
+      "date_modified": "2025-06-04T15:13:58.469000",
+      "doc_id": "DE279042",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.128949"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\G4QKBYYE\\Whaley et al. - 2018 - GEM-MACH-PAH (rev2488) a new high-resolution chemical transport model for North American polycyclic.pdf": {
+      "date_modified": "2025-06-04T09:55:11.539000",
+      "doc_id": "E004804B",
+      "doi": "10.5194/gmd-11-2609-2018",
+      "date_indexed": "2025-11-08T15:06:30.220198"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\G6Q5SCKR\\Petrescu-Mag et al. - 2022 - How Climate Change Science Is Reflected in People’s Minds. A Cross-Country Study on People’s Percept.pdf": {
+      "date_modified": "2025-01-14T14:25:34.340000",
+      "doc_id": "80EA5ED6",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.297347"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\GA4TPQYE\\Howe et al. - 2019 - Public perceptions of the health risks of extreme heat across US states, counties, and neighborhoods.pdf": {
+      "date_modified": "2025-01-18T15:46:57.810000",
+      "doc_id": "9DA06E3E",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.329958"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\GFEJ2MR6\\Chelluboyina et al. - 2024 - Dark brown carbon from wildfires a potent snow radiative forcing agent.pdf": {
+      "date_modified": "2025-08-23T22:14:32.260258",
+      "doc_id": "2BE057FE",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.376460"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\GIYI9K8S\\Ren et al. - 2021 - Anisotropy Parameterization Development and Evaluation for Glacier Surface Albedo Retrieval from Sat.pdf": {
+      "date_modified": "2025-06-28T17:57:46.154000",
+      "doc_id": "D2164A05",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.454202"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\H2ZYJYJK\\Jain et al. - 2024 - Drivers and Impacts of the Record-Breaking 2023 Wildfire Season in Canada.pdf": {
+      "date_modified": "2025-05-28T13:45:21.783000",
+      "doc_id": "AA2647A1",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.514304"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\H4B3BACQ\\Williamson et al. - 2020 - Comparing simple albedo scaling methods for estimating Arctic glacier mass balance.pdf": {
+      "date_modified": "2025-06-06T09:51:31.847000",
+      "doc_id": "8743E4B3",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.558604"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\H63I2KG4\\Qian et al. - 2015 - Light-absorbing particles in snow and ice Measurement and modeling of climatic and hydrological imp.pdf": {
+      "date_modified": "2025-07-14T09:09:40.097000",
+      "doc_id": "8B0B427A",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.697884"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\H6X7RMKZ\\Gleason et al. - 2019 - Four-fold increase in solar forcing on snow in western U.S. burned forests since 1999.pdf": {
+      "date_modified": "2025-07-14T09:18:23.229000",
+      "doc_id": "A9B6AC0B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.730283"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\H86YY7XN\\Magalhães et al. - 2019 - Amazonian Biomass Burning Enhances Tropical Andean Glaciers Melting.pdf": {
+      "date_modified": "2025-05-07T21:34:17.431000",
+      "doc_id": "00309088",
+      "doi": "10.1038/s41598-019-53284-1",
+      "date_indexed": "2025-11-08T15:06:30.780317"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\HA3MFH2J\\Muhammad et Thapa - 2021 - Daily Terra–Aqua MODIS cloud-free snow and Randolph Glacier Inventory 6.0 combined product (MD10A1G.pdf": {
+      "date_modified": "2025-06-09T11:42:59.042000",
+      "doc_id": "2F81009D",
+      "doi": "10.5194/essd-13-767-2021",
+      "date_indexed": "2025-11-08T15:06:30.815178"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\HBC2RHMD\\Moran et al. - 2018 - A Comprehensive Performance Evaluation of the Next Generation of the Canadian Operational Regional A.pdf": {
+      "date_modified": "2025-06-03T12:55:12.095000",
+      "doc_id": "6E58F193",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.825178"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\HFMRAN7H\\Ballester et al. - 2023 - Heat-related mortality in Europe during the summer of 2022.pdf": {
+      "date_modified": "2025-02-11T17:16:59.697000",
+      "doc_id": "5F08B3C0",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.888164"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\HGRK9MIR\\Wang et al. - 2025 - Global glacier albedo trends over 2000–2022 Drivers and implications.pdf": {
+      "date_modified": "2025-09-14T19:38:39.401000",
+      "doc_id": "B963B1DB",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.940755"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\HMF2MIWC\\Akompab et al. - 2013 - Awareness of and Attitudes towards Heat Waves within the Context of Climate Change among a Cohort of.pdf": {
+      "date_modified": "2025-01-18T15:46:50.428000",
+      "doc_id": "66DCC8F7",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:30.973551"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\I2FFD899\\Oerlemans - The Microclimate of Valley Glaciers.pdf": {
+      "date_modified": "2025-10-15T11:07:13.411000",
+      "doc_id": "441FD4C8",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.190197"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\IGPTJ8PV\\Intsiful et Ambinakudige - 2021 - Glacier Cover Change Assessment of the Columbia Icefield in the Canadian Rocky Mountains, Canada (19.pdf": {
+      "date_modified": "2025-06-05T12:06:16.885000",
+      "doc_id": "DDC6AB5B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.228195"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\J4IL23BP\\Pavlovic et al. - 2016 - The FireWork air quality forecast system with near-real-time biomass burning emissions Recent devel.pdf": {
+      "date_modified": "2025-05-28T13:47:08.422000",
+      "doc_id": "3128AB4F",
+      "doi": "10.1080/10962247.2016.1158214",
+      "date_indexed": "2025-11-08T15:06:31.313513"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\J7EFTMDZ\\Jansson et al. - 2003 - The concept of glacier storage a review.pdf": {
+      "date_modified": "2025-10-13T10:17:51.470000",
+      "doc_id": "2E9E5CF7",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.361472"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\J7LHMZ3I\\Stein et al. - 2015 - NOAA’s HYSPLIT Atmospheric Transport and Dispersion Modeling System.pdf": {
+      "date_modified": "2025-10-26T19:40:23.116085",
+      "doc_id": "68C2411D",
+      "doi": "10.1175/BAMS-D-14-00110.1",
+      "date_indexed": "2025-11-08T15:06:31.439303"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\J7YDQWTF\\Hock - 2005 - Glacier melt a review of processes and their modelling.pdf": {
+      "date_modified": "2025-05-29T12:31:01.285000",
+      "doc_id": "560F0329",
+      "doi": "10.1191/0309133305pp453ra",
+      "date_indexed": "2025-11-08T15:06:31.555589"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\JMZTJ62X\\Hu et al. - 2025 - Global high-resolution fire-sourced PM2.5 concentrations for 2000–2023.pdf": {
+      "date_modified": "2025-11-06T17:52:39.401936",
+      "doc_id": "C3C1D7FE",
+      "doi": "10.5194/essd-17-3741-2025",
+      "date_indexed": "2025-11-08T15:06:31.615589"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\KSG8AAZA\\Vuille et al. - 2018 - Rapid decline of snow and ice in the tropical Andes – Impacts, uncertainties and challenges ahead.pdf": {
+      "date_modified": "2025-04-25T21:08:33.698000",
+      "doc_id": "BB048C04",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.739834"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\LNSVWTED\\Campbell et Hossain - 2022 - APPLICATION OF REMOTE SENSING TO STUDY THE POTENTIAL IMPACTS OF 2020 WILDFIRE EVENTS ON THE GLACIERS.pdf": {
+      "date_modified": "2025-06-04T15:51:26.913000",
+      "doc_id": "B1367A7D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.751837"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\MDWANN5C\\Palomaki et al. - 2025 - Assessment of methods for mapping snow albedo from MODIS.pdf": {
+      "date_modified": "2025-07-04T17:29:03.305000",
+      "doc_id": "F49000E1",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.830841"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\MMD8YKEX\\Dharmadasa et al. - 2024 - Meteorological control on snow depth evolution and snowpack energy exchanges in an agro-forested env.pdf": {
+      "date_modified": "2025-10-21T14:29:14.642229",
+      "doc_id": "83AB22FB",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:31.922778"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\MPDZX2T6\\Zemp et al. - 2025 - Community estimate of global glacier mass changes from 2000 to 2023.pdf": {
+      "date_modified": "2025-10-22T10:26:06.677730",
+      "doc_id": "8D3FBDA5",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.004235"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\MT9YMX2A\\Darkening_Tropical_Glaciers_EN.pdf": {
+      "date_modified": "2025-04-25T08:50:33.299000",
+      "doc_id": "E3ECDB69",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.006373"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\MYKLWGZS\\Liu et al. - 2024 - Variation in Glacier Albedo on the Tibetan Plateau between 2001 and 2022 Based on MODIS Data.pdf": {
+      "date_modified": "2025-06-04T13:53:55.219000",
+      "doc_id": "A30C574D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.049337"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\N2ZFZFB3\\Sierra-Hernández et al. - 2022 - Increased Fire Activity in Alaska Since the 1980s Evidence From an Ice Core-Derived Black Carbon Re.pdf": {
+      "date_modified": "2025-09-04T20:18:05.849986",
+      "doc_id": "6FC48703",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.111054"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\NFHBTCBQ\\Skiles et Painter - 2018 - Assessment of Radiative Forcing by Light-Absorbing Particles in Snow from In Situ Observations with.pdf": {
+      "date_modified": "2025-10-26T19:44:06.234267",
+      "doc_id": "E3A16287",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.156967"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\NG9KHCKW\\Skiles et al. - 2018 - Radiative forcing by light-absorbing particles in snow.pdf": {
+      "date_modified": "2025-10-26T19:45:46.878000",
+      "doc_id": "00FEA86D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.201601"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\NMACAVSY\\Pavlovic et al. - 2016 - The FireWork air quality forecast system with near-real-time biomass burning emissions Recent devel.pdf": {
+      "date_modified": "2025-06-03T21:20:05.984000",
+      "doc_id": "E647BA06",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.289141"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\PGIUNM3L\\Manninen et al. - 2020 - Diurnal Black-Sky Surface Albedo Parameterization of Snow.pdf": {
+      "date_modified": "2025-10-24T16:32:56.511572",
+      "doc_id": "CE795810",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.339933"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\PGPJ8TLF\\Knowles et al. - 2006 - Trends in Snowfall versus Rainfall in the Western United States.pdf": {
+      "date_modified": "2025-10-22T09:59:37.683805",
+      "doc_id": "94D9462D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.398803"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\PQPWVEVD\\Aubry‐Wake et al. - 2022 - Fire and Ice The Impact of Wildfire‐Affected Albedo and Irradiance on Glacier Melt.pdf": {
+      "date_modified": "2025-05-07T21:34:16.296000",
+      "doc_id": "59002C7D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.454956"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\PZW5ABEK\\Sawchuk - 2025 - The Worsening Positive Feedback Loop Between Wildfires and Climate Change in Canada Natural and Ant.pdf": {
+      "date_modified": "2025-07-14T09:23:00.762000",
+      "doc_id": "CC8AF92B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.483952"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Q4X2MWXW\\Hugonnet et al. - 2021 - Accelerated global glacier mass loss in the early twenty-first century.pdf": {
+      "date_modified": "2025-09-14T12:43:42.768815",
+      "doc_id": "EDF7C4E9",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.575427"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Q5TDJ493\\Turpo Cayo et al. - 2022 - Mapping Three Decades of Changes in the Tropical Andean Glaciers Using Landsat Data Processed in the.pdf": {
+      "date_modified": "2025-05-03T16:03:35.903000",
+      "doc_id": "CBB5E460",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.653173"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\QWAIJWDZ\\Che et al. - 2017 - Assessment of MODIS BRDFAlbedo Model Parameters (MCD43A1 Collection 6) for Directional Reflectance.pdf": {
+      "date_modified": "2025-05-28T15:52:08.797000",
+      "doc_id": "5EA3274E",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.720297"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\REJ67846\\Qu et al. - 2015 - Mapping Surface Broadband Albedo from Satellite Observations A Review of Literatures on Algorithms.pdf": {
+      "date_modified": "2025-08-22T09:29:32.166250",
+      "doc_id": "6D73E91B",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.801693"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\RGLSGSN2\\Ding et al. - 2024 - Improved estimation of daily blue-sky snow shortwave albedo from MODIS data and reanalysis informati.pdf": {
+      "date_modified": "2025-05-28T14:45:19.840000",
+      "doc_id": "41166387",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:32.850876"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\RMJ6KIH8\\Flanner et al. - 2021 - SNICAR-ADv3 a community tool for modeling spectral snow albedo.pdf": {
+      "date_modified": "2025-10-22T11:22:18.424836",
+      "doc_id": "AD9C8F75",
+      "doi": "10.5194/gmd-14-7673-2021",
+      "date_indexed": "2025-11-08T15:06:32.992564"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\S3ZCBURI\\Kumar et al. - 2019 - Snowfall Variability Dictates Glacier Mass Balance Variability in Himalaya-Karakoram.pdf": {
+      "date_modified": "2025-10-22T10:13:18.035573",
+      "doc_id": "308D7C47",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.024747"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\SFTQNIWU\\researchplan_10006215.pdf": {
+      "date_modified": "2025-09-18T21:20:02.624690",
+      "doc_id": "EE9936FC",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.077309"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\SR3YR6A8\\Johnson et Rupper - 2020 - An Examination of Physical Processes That Trigger the Albedo-Feedback on Glacier Surfaces and Implic.pdf": {
+      "date_modified": "2025-06-04T15:17:17.342000",
+      "doc_id": "9A46A686",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.140592"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\TRNWICBT\\Seminar_2010-04-23_Stavros_Antonopoulos.pdf": {
+      "date_modified": "2025-06-03T14:09:47.748000",
+      "doc_id": "275E3C84",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.152585"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\TSU6CH42\\Greuell et al. - 2007 - Assessment of interannual variations in the surface mass balance of 18 Svalbard glaciers from the Mo.pdf": {
+      "date_modified": "2025-05-29T12:39:08.999000",
+      "doc_id": "E32692E9",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.206496"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\TXNUX37S\\Kang et al. - 2020 - A review of black carbon in snow and ice and its impact on the cryosphere.pdf": {
+      "date_modified": "2025-07-14T09:04:13.121000",
+      "doc_id": "555B54D3",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.288727"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\UA8ZHGEG\\Montero et al. - 2024 - Facilitating advanced Sentinel-2 analysis through a simplified computation of Nadir BRDF Adjusted Re.pdf": {
+      "date_modified": "2025-06-01T14:47:51.920000",
+      "doc_id": "EB98939D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.328632"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\UJ2JY8YM\\Shen et al. - 2025 - Impacts of wildfire smoke aerosols on near-surface ozone photochemistry.pdf": {
+      "date_modified": "2025-06-04T11:34:22.605000",
+      "doc_id": "53EAE663",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.391015"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\UMTDAY7N\\Réveillet et al. - 2022 - Black carbon and dust alter the response of mountain snow cover under climate change.pdf": {
+      "date_modified": "2025-10-30T18:19:31.067094",
+      "doc_id": "43849E99",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.454894"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\UTHHDX4J\\Sterle et al. - 2013 - Retention and radiative forcing of black carbon in eastern Sierra Nevada snow.pdf": {
+      "date_modified": "2025-10-26T16:25:08.516000",
+      "doc_id": "5FD79057",
+      "doi": "10.5194/tc-7-365-2013",
+      "date_indexed": "2025-11-08T15:06:33.498011"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\W58YM7MD\\Coogan et al. - 2019 - Scientists’ warning on wildfire — a Canadian perspective.pdf": {
+      "date_modified": "2025-07-14T09:22:32.237000",
+      "doc_id": "A0EA0A4D",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.564308"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\W7GNXKDR\\Liu et al. - 2009 - Validation of Moderate Resolution Imaging Spectroradiometer (MODIS) albedo retrieval algorithm Depe.pdf": {
+      "date_modified": "2025-05-29T11:21:50.277000",
+      "doc_id": "EDB9EB7E",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.603451"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\WGD72WT9\\Davignon et Moran - 71 PUBLICATIONS 957 CITATIONS SEE PROFILE.pdf": {
+      "date_modified": "2025-06-03T13:13:12.430000",
+      "doc_id": "5EAC7431",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.630968"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\WYTD8RCM\\Pellicciotti et al. - 2005 - An enhanced temperature-index glacier melt model including the shortwave radiation balance developm.pdf": {
+      "date_modified": "2025-10-20T19:49:32.175363",
+      "doc_id": "FD767A00",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.686507"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\X3A6KQK7\\Philippenko et al. - 2021 - Perceptions of climate change and adaptation A subarctic archipelago perspective (Saint-Pierre-and-.pdf": {
+      "date_modified": "2025-01-14T20:27:45.945000",
+      "doc_id": "11F336E2",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.773231"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\X6JNMMXN\\Albamonte et al. - 2025 - Remote glacier monitoring through semantic fusion of geographic and contextual data.pdf": {
+      "date_modified": "2025-09-09T17:58:45.987278",
+      "doc_id": "F234D91A",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.850572"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\XBD7CGWU\\Williamson et Menounos - 2021 - The influence of forest fire aerosol and air temperature on glacier albedo, western North America.pdf": {
+      "date_modified": "2025-09-23T17:01:36.512174",
+      "doc_id": "FDD49B61",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:33.927160"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Y6HYM8ZN\\Bertoncini et Pomeroy - 2024 - Assimilation of Satellite Albedo to Improve Simulations of Glacier Hydrology.pdf": {
+      "date_modified": "2025-06-01T14:07:22.298000",
+      "doc_id": "32954163",
+      "doi": "10.22541/au.171128344.49725407/v1",
+      "date_indexed": "2025-11-08T15:06:33.982732"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\YSMASRBS\\Kapoor et Narayanan - 2023 - Leakage and the reproducibility crisis in machine-learning-based science.pdf": {
+      "date_modified": "2025-10-16T11:18:49.137000",
+      "doc_id": "967CC7A8",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:34.122536"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Z2LXWLSC\\Warren - 2019 - Optical properties of ice and snow.pdf": {
+      "date_modified": "2025-10-26T19:39:28.683000",
+      "doc_id": "00993CCF",
+      "doi": "10.1098/rsta.2018.0161",
+      "date_indexed": "2025-11-08T15:06:34.183042"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Z3USMPLL\\Williamson et al. - 2016 - The accuracy of satellite-derived albedo for northern alpine and glaciated land covers.pdf": {
+      "date_modified": "2025-10-24T16:36:42.336731",
+      "doc_id": "F6E2EBDB",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:34.215449"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\Z9HQ8ZBK\\Meenar et al. - 2023 - “The Urban Poor and Vulnerable Are Hit Hardest by the Heat” A Heat Equity Lens to Understand Commun.pdf": {
+      "date_modified": "2025-01-14T21:39:07.644000",
+      "doc_id": "0CB28A27",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:34.292276"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ZNYSN8ML\\Ryan et al. - 2019 - Greenland Ice Sheet surface melt amplified by snowline migration and bare ice exposure.pdf": {
+      "date_modified": "2025-10-26T19:47:16.684071",
+      "doc_id": "5C00D3E1",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:34.339250"
+    },
+    "C:\\Users\\thier\\Zotero\\storage\\ZRBFYKLT\\Intergovernmental Panel On Climate Change (Ipcc) - 2022 - The Ocean and Cryosphere in a Changing Climate Special Report of the Intergovernmental Panel on Cli.pdf": {
+      "date_modified": "2025-10-13T10:27:46.699000",
+      "doc_id": "BFB9A233",
+      "doi": "",
+      "date_indexed": "2025-11-08T15:06:34.736799"
+    }
+  },
+  "deduplicated_files": {
+    "10.5194/tc-13-397-2019": [
+      "C:\\Users\\thier\\Zotero\\storage\\5XDQNKD8\\Naegeli et al. - 2019 - Change detection of bare-ice albedo in the Swiss Alps.pdf"
+    ],
+    "10.5194/tc-14-3249-2020": [
+      "C:\\Users\\thier\\Zotero\\storage\\422VGY2F\\Marshall et Miller - 2020 - Seasonal and interannual variability of melt-season albedo at Haig Glacier, Canadian Rocky Mountains.pdf"
+    ],
+    "10.1038/s41598-019-53284-1": [
+      "C:\\Users\\thier\\Zotero\\storage\\38QTPUIX\\s41598-019-53284-1.pdf",
+      "C:\\Users\\thier\\Zotero\\storage\\6LYCE8VT\\s41598-019-53284-1.pdf"
+    ],
+    "10.5194/tc-15-547-2021": [
+      "C:\\Users\\thier\\Zotero\\storage\\69DTDC4E\\Gunnarsson et al. - 2021 - Annual and inter-annual variability and trends of albedo of Icelandic glaciers.pdf"
+    ],
+    "10.5194/tc-12-271-2018": [
+      "C:\\Users\\thier\\Zotero\\storage\\87N47DLG\\Davaze et al. - 2018 - Monitoring glacier albedo as a proxy to derive summer and annual surface mass balances from optical.pdf"
+    ],
+    "B9D1643B": [
+      "C:\\Users\\thier\\Zotero\\storage\\AKR4CBG4\\Huss et Hock - 2018 - Global-scale hydrological response to future glacier mass loss.pdf"
+    ],
+    "10.5194/tc-10-477-2016": [
+      "C:\\Users\\thier\\Zotero\\storage\\8BUSP237\\Tedesco et al. - 2016 - The darkening of the Greenland ice sheet trends, drivers, and projections (1981&ndash;2100).pdf"
+    ],
+    "BE378003": [
+      "C:\\Users\\thier\\Zotero\\storage\\DWPDHVA6\\Fraser - Environmentally Sound Management of End-of-Life Batteries from Electric-Drive Vehicles in North Amer.pdf"
+    ],
+    "10.5194/acp-25-143-2025": [
+      "C:\\Users\\thier\\Zotero\\storage\\B58I5MAD\\Kinase et al. - 2025 - Long-term observations of black carbon and carbon monoxide in the Poker Flat Research Range, central.pdf"
+    ],
+    "D254BDC9": [
+      "C:\\Users\\thier\\Zotero\\storage\\9KBYYIIR\\main.pdf"
+    ],
+    "10.5194/tc-17-2909-2023": [
+      "C:\\Users\\thier\\Zotero\\storage\\HHIFAAQP\\Khan et al. - 2023 - Black carbon concentrations and modeled smoke deposition fluxes to the bare-ice dark zone of the Gre.pdf"
+    ],
+    "23394F6D": [
+      "C:\\Users\\thier\\Zotero\\storage\\HKVIL7LS\\Bertoncini et al. - 2022 - Large-area high spatial resolution albedo retrievals from remote sensing for use in assessing the im.pdf"
+    ],
+    "10.1080/01431161.2023.2291000": [
+      "C:\\Users\\thier\\Zotero\\storage\\HXRFYYT6\\Feng et al. - 2024 - Remote sensing of ice albedo using harmonized Land.pdf"
+    ],
+    "10.1080/10962247.2016.1158214": [
+      "C:\\Users\\thier\\Zotero\\storage\\9WQT2HD5\\The FireWork air quality forecast system with near-real-time biomass burning emissions  Recent developments and evaluation of performance for the 2015.pdf"
+    ],
+    "EDF52D9C": [
+      "C:\\Users\\thier\\Zotero\\storage\\K5DK8IVQ\\Schaaf et al. - 2002 - First operational BRDF, albedo nadir reflectance products from MODIS.pdf"
+    ],
+    "10.5194/tc-19-3553-2025": [
+      "C:\\Users\\thier\\Zotero\\storage\\K7MDAA3B\\Guo et al. - 2025 - Enhanced MODIS-derived ice physical properties within the Common Land Model (CoLM) revealing bare-ic.pdf"
+    ],
+    "D774867E": [
+      "C:\\Users\\thier\\Zotero\\storage\\LU5M47RB\\Zhang et al. - 2025 - Emergy-based valuation of glacier ecosystem services A case from the Tibetan Plateau.pdf"
+    ],
+    "10.5194/tc-17-3955-2023": [
+      "C:\\Users\\thier\\Zotero\\storage\\NKSAK4CY\\Gunnarsson et al. - 2023 - Modeling of surface energy balance for Icelandic glaciers using remote-sensing albedo.pdf"
+    ],
+    "F5ADC164": [
+      "C:\\Users\\thier\\Zotero\\storage\\PJ53D749\\Wang et al. - 2025 - Global glacier albedo trends over 2000–2022 Drivers and implications.pdf"
+    ],
+    "3DA76A88": [
+      "C:\\Users\\thier\\Zotero\\storage\\S7P2U8BL\\Knowles et al. - 2006 - Trends in Snowfall versus Rainfall in the Western United States.pdf"
+    ],
+    "10.5194/tc-9-1385-2015": [
+      "C:\\Users\\thier\\Zotero\\storage\\SS2WBV28\\Gabbi et al. - 2015 - The impact of Saharan dust and black carbon on albedo and long-term mass balance of an Alpine glacie.pdf"
+    ],
+    "6D69E291": [
+      "C:\\Users\\thier\\Zotero\\storage\\SXXZMAAU\\The GlaMBIE Team et al. - 2025 - Community estimate of global glacier mass changes from 2000 to 2023.pdf"
+    ],
+    "10.5194/tc-6-1527-2012": [
+      "C:\\Users\\thier\\Zotero\\storage\\BQVK3IL4\\Dumont et al. - 2012 - Linking glacier annual mass balance and glacier albedo retrieved from MODIS data.pdf"
+    ],
+    "10.5194/tc-16-1197-2022": [
+      "C:\\Users\\thier\\Zotero\\storage\\VX685KQ6\\Whicker et al. - 2022 - SNICAR-ADv4 a physically based radiative transfer model to represent the spectral albedo of glacier.pdf",
+      "C:\\Users\\thier\\Zotero\\storage\\WMPIME8T\\tc-16-1197-2022.pdf"
+    ],
+    "631D080F": [
+      "C:\\Users\\thier\\Zotero\\storage\\AQ4S9SGD\\Pellicciotti et al. - 2005 - An enhanced temperature-index glacier melt model including the shortwave radiation balance developm.pdf"
+    ],
+    "10.5194/cp-15-579-2019": [
+      "C:\\Users\\thier\\Zotero\\storage\\XAJLR46I\\Osmont et al. - 2019 - A Holocene black carbon ice-core record of biomass burning in the Amazon Basin from Illimani, Bolivi.pdf"
+    ],
+    "2DF27D60": [
+      "C:\\Users\\thier\\Zotero\\storage\\EZW8NKZK\\1-s2.0-S0034425721004521-main.pdf"
+    ],
+    "EAA703BA": [
+      "C:\\Users\\thier\\Zotero\\storage\\QIWJ3SN9\\Williamson et al. - 2016 - The accuracy of satellite-derived albedo for northern alpine and glaciated land covers.pdf"
+    ],
+    "97EE1210": [
+      "C:\\Users\\thier\\Zotero\\storage\\9VUQ69HH\\Intergovernmental Panel On Climate Change (Ipcc) - 2022 - The Ocean and Cryosphere in a Changing Climate Special Report of the Intergovernmental Panel on Cli.pdf"
+    ]
+  },
+  "statistics": {
+    "total_indexed": 122,
+    "last_full_reindex": "2025-11-08T15:28:45.142204",
+    "last_incremental_update": "2025-11-08T15:06:34.736799"
+  }
+}
