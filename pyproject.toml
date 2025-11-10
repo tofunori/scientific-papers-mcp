@@ -25,9 +25,9 @@ dependencies = [
     "langchain>=0.2.0",
     "langchain-experimental>=0.0.60",
 
-    # PDF extraction with OCR support
-    "pymupdf>=1.24.0",
-    "pytesseract>=0.3.10",
+    # PDF extraction with LlamaParse
+    "llama-parse>=0.4.0",  # GenAI-native PDF parsing ($0.003/page, 7k free/week)
+    "llama-extract>=0.1.0",  # Structured metadata extraction
 
     # Progress bars
     "tqdm>=4.66.0",
@@ -36,9 +36,6 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
     "watchdog>=4.0.0",
-
-    # Optional: Marker for advanced PDF extraction
-    "requests>=2.31.0",  # For Marker API
 ]
 
 [project.scripts]
@@ -53,11 +50,6 @@ dev = [
     "mypy>=1.8.0",
 ]
 
-# Marker local installation (heavy: ~3-5GB with models)
-marker-local = [
-    "marker-pdf>=1.0.0",
-]
-
 # LlamaIndex integration (advanced RAG features via MCP API)
 llamaindex = [
     "llama-index>=0.10.0",
@@ -66,15 +58,9 @@ llamaindex = [
     "llama-index-postprocessor-cohere>=0.1.0",
 ]
 
-# LlamaParse + LlamaExtract (PDF parsing and metadata extraction)
-llamaparse = [
-    "llama-parse>=0.4.0",  # GenAI-native PDF parsing ($0.003/page, 7k free/week)
-    "llama-extract>=0.1.0",  # Structured metadata extraction
-]
-
-# Testing and comparison tools
+# Testing tools
 testing = [
-    "rich>=13.0.0",  # Pretty CLI output for test_marker_comparison.py
+    "rich>=13.0.0",  # Pretty CLI output
 ]
 
 dev-all = [
@@ -82,7 +68,7 @@ dev-all = [
 ]
 
 all = [
-    "scientific-papers-mcp[marker-local,llamaindex,llamaparse,testing]",
+    "scientific-papers-mcp[llamaindex,testing]",
 ]
 
 [tool.setuptools]

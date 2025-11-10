@@ -113,48 +113,8 @@ class Config(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
-    # PDF Extraction with Marker (API + Local support) and LlamaParse
-    # Marker provides superior extraction for scientific papers with tables/equations
-    # LlamaParse offers GenAI-native parsing with natural language instructions
-    pdf_extraction_method: str = "pymupdf"  # Options: "pymupdf", "marker_api", "marker_local", "llamaparse"
-
-    # Marker API settings
-    marker_api_key: str = ""  # Datalab Marker API key ($5 free credits)
-    marker_use_llm: bool = True  # Enable LLM for better table/equation extraction
-    marker_force_ocr: bool = False  # Force OCR even if text is embedded
-    marker_api_timeout: int = 180  # API timeout in seconds (3 minutes)
-
-    # Marker Local settings (requires: pip install marker-pdf)
-    marker_local_batch_multiplier: int = 1  # GPU batch multiplier (increase for better GPU usage)
-    marker_local_use_llm: bool = False  # Use LLM with local Marker (requires LLM API key)
-
-    # Marker Local LLM configuration
-    # LLM service: "gemini" (default), "vertex", "claude", "openai", "ollama"
-    marker_local_llm_service: str = "gemini"
-
-    # Gemini settings (default for Marker --use_llm)
-    google_api_key: str = ""  # Gemini API key (from GOOGLE_API_KEY env var)
-    marker_gemini_model: str = "gemini-2.0-flash"  # Gemini model name
-
-    # Google Vertex AI settings (alternative to Gemini, more reliable)
-    marker_vertex_project_id: str = ""  # GCP project ID
-
-    # Claude settings (alternative LLM)
-    claude_api_key: str = ""  # Anthropic Claude API key
-    marker_claude_model: str = "claude-3-sonnet-20240229"  # Claude model
-
-    # OpenAI settings (alternative LLM)
-    openai_api_key: str = ""  # OpenAI API key
-    marker_openai_model: str = "gpt-4-turbo"  # OpenAI model
-
-    # Ollama settings (local LLM, free)
-    marker_ollama_base_url: str = "http://localhost:11434"  # Ollama server URL
-    marker_ollama_model: str = "llama2"  # Ollama model name
-
-    # Fallback strategy
-    marker_fallback_to_pymupdf: bool = True  # Fallback to PyMuPDF if Marker fails
-
-    # LlamaParse settings (GenAI-native PDF parsing with natural language instructions)
+    # PDF Extraction with LlamaParse
+    # LlamaParse: GenAI-native PDF parsing with natural language instructions
     # Cost: $0.003/page with 7,000 free pages per week
     # API: https://cloud.llamaindex.ai/
     llamaparse_api_key: str = ""  # LlamaCloud API key (from LLAMA_CLOUD_API_KEY env var)
