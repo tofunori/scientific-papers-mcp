@@ -113,6 +113,25 @@ class Config(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
+    # PDF Extraction with Marker (API + Local support)
+    # Marker provides superior extraction for scientific papers with tables/equations
+    pdf_extraction_method: str = "pymupdf"  # Options: "pymupdf", "marker_api", "marker_local"
+
+    # Marker API settings
+    marker_api_key: str = ""  # Datalab Marker API key ($5 free credits)
+    marker_use_llm: bool = True  # Enable LLM for better table/equation extraction
+    marker_force_ocr: bool = False  # Force OCR even if text is embedded
+    marker_api_timeout: int = 180  # API timeout in seconds (3 minutes)
+
+    # Marker Local settings (requires: pip install marker-pdf)
+    marker_local_batch_multiplier: int = 1  # GPU batch multiplier (increase for better GPU usage)
+    marker_local_use_llm: bool = False  # Use LLM with local Marker (requires LLM API key)
+    marker_local_llm_provider: str = ""  # LLM provider: "openai", "anthropic", "google"
+    marker_local_llm_model: str = ""  # LLM model name (e.g., "gpt-4", "claude-3-sonnet")
+
+    # Fallback strategy
+    marker_fallback_to_pymupdf: bool = True  # Fallback to PyMuPDF if Marker fails
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -15,6 +15,22 @@ from ..utils.text_chunker import DocumentChunker
 from .indexing_state import IndexingStateManager
 from .deduplicator import DocumentDeduplicator
 
+# Marker extractors (optional, will be loaded on demand)
+MARKER_API_AVAILABLE = False
+MARKER_LOCAL_AVAILABLE = False
+
+try:
+    from ..extractors.marker_api_extractor import MarkerAPIExtractor
+    MARKER_API_AVAILABLE = True
+except ImportError:
+    pass
+
+try:
+    from ..extractors.marker_local_extractor import MarkerLocalExtractor
+    MARKER_LOCAL_AVAILABLE = MarkerLocalExtractor.is_available()
+except ImportError:
+    pass
+
 logger = setup_logger(__name__)
 
 
@@ -81,14 +97,49 @@ class ZoteroLibraryIndexer:
         self.deduplicator = deduplicator or DocumentDeduplicator()
 
         # Initialize document chunker for splitting papers
+        # Use markdown-aware chunking if using Marker extraction
+        use_markdown = self.pdf_extraction_method in ["marker_api", "marker_local"]
         self.chunker = DocumentChunker(
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
+            use_markdown_separators=use_markdown,
         )
 
         self.statistics = IndexingStatistics()
 
+        # Initialize PDF extractors based on config
+        self.pdf_extraction_method = config.pdf_extraction_method
+        self.marker_api_extractor = None
+        self.marker_local_extractor = None
+
+        # Initialize Marker API extractor if configured
+        if self.pdf_extraction_method == "marker_api" and MARKER_API_AVAILABLE:
+            if config.marker_api_key:
+                self.marker_api_extractor = MarkerAPIExtractor(
+                    api_key=config.marker_api_key,
+                    timeout=config.marker_api_timeout,
+                )
+                logger.info("Marker API extractor initialized")
+            else:
+                logger.warning("Marker API selected but no API key found. Falling back to PyMuPDF")
+                self.pdf_extraction_method = "pymupdf"
+
+        # Initialize Marker Local extractor if configured
+        elif self.pdf_extraction_method == "marker_local" and MARKER_LOCAL_AVAILABLE:
+            try:
+                self.marker_local_extractor = MarkerLocalExtractor(
+                    use_llm=config.marker_local_use_llm,
+                    llm_provider=config.marker_local_llm_provider or None,
+                    llm_model=config.marker_local_llm_model or None,
+                    batch_multiplier=config.marker_local_batch_multiplier,
+                )
+                logger.info("Marker Local extractor initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Marker Local: {e}. Falling back to PyMuPDF")
+                self.pdf_extraction_method = "pymupdf"
+
         logger.info(f"Zotero library indexer initialized (path: {self.library_path})")
+        logger.info(f"PDF extraction method: {self.pdf_extraction_method}")
         logger.info(f"Document chunker initialized (chunk_size={config.chunk_size}, overlap={config.chunk_overlap})")
 
     def scan_zotero_library(
@@ -151,6 +202,11 @@ class ZoteroLibraryIndexer:
         """
         Extract metadata and content from a document file
 
+        Supports multiple extraction methods:
+        - pymupdf: Fast, lightweight (default)
+        - marker_api: High quality, cloud-based (Datalab API)
+        - marker_local: High quality, local processing
+
         Args:
             file_path: Path to PDF file
 
@@ -158,13 +214,72 @@ class ZoteroLibraryIndexer:
             ZoteroDocument or None if extraction failed
         """
         try:
-            logger.debug(f"Extracting: {file_path.name}")
+            logger.debug(f"Extracting: {file_path.name} (method: {self.pdf_extraction_method})")
 
-            # Extract PDF metadata
-            metadata = extract_metadata_from_pdf(file_path)
+            # Initialize variables
+            full_text = ""
+            metadata = {}
+            images = []
+            is_scanned = False
+            extraction_source = self.pdf_extraction_method
 
-            # Extract PDF text content AND images for multimodal embedding
-            full_text, is_scanned, images = extract_text_from_pdf(file_path, extract_images=True)
+            # Try Marker API extraction
+            if self.pdf_extraction_method == "marker_api" and self.marker_api_extractor:
+                try:
+                    markdown_text, marker_metadata, images = self.marker_api_extractor.extract_text_from_pdf(
+                        file_path,
+                        use_llm=config.marker_use_llm,
+                        force_ocr=config.marker_force_ocr,
+                        extract_images=True,
+                    )
+                    # Extract enhanced metadata from markdown
+                    metadata = self.marker_api_extractor.extract_metadata_from_markdown(
+                        markdown_text, marker_metadata
+                    )
+                    full_text = markdown_text
+                    is_scanned = marker_metadata.get("is_scanned", False)
+                    logger.debug(f"Successfully extracted with Marker API: {len(markdown_text)} chars")
+
+                except Exception as e:
+                    logger.warning(f"Marker API failed for {file_path.name}: {e}")
+                    if config.marker_fallback_to_pymupdf:
+                        logger.info(f"Falling back to PyMuPDF for {file_path.name}")
+                        extraction_source = "pymupdf_fallback"
+                    else:
+                        raise
+
+            # Try Marker Local extraction
+            elif self.pdf_extraction_method == "marker_local" and self.marker_local_extractor:
+                try:
+                    markdown_text, marker_metadata, images = self.marker_local_extractor.extract_text_from_pdf(
+                        file_path,
+                        extract_images=True,
+                    )
+                    # Extract enhanced metadata from markdown
+                    metadata = self.marker_local_extractor.extract_metadata_from_markdown(
+                        markdown_text, marker_metadata
+                    )
+                    full_text = markdown_text
+                    is_scanned = marker_metadata.get("is_scanned", False)
+                    logger.debug(f"Successfully extracted with Marker Local: {len(markdown_text)} chars")
+
+                except Exception as e:
+                    logger.warning(f"Marker Local failed for {file_path.name}: {e}")
+                    if config.marker_fallback_to_pymupdf:
+                        logger.info(f"Falling back to PyMuPDF for {file_path.name}")
+                        extraction_source = "pymupdf_fallback"
+                    else:
+                        raise
+
+            # Use PyMuPDF extraction (default or fallback)
+            if not full_text or extraction_source in ["pymupdf", "pymupdf_fallback"]:
+                # Extract PDF metadata
+                metadata = extract_metadata_from_pdf(file_path)
+
+                # Extract PDF text content AND images for multimodal embedding
+                full_text, is_scanned, images = extract_text_from_pdf(file_path, extract_images=True)
+
+                logger.debug(f"Extracted with PyMuPDF: {len(full_text)} chars")
 
             # Get file modification time
             file_modified = datetime.fromtimestamp(file_path.stat().st_mtime)

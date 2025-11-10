@@ -33,7 +33,8 @@ class DocumentChunker:
         self,
         chunk_size: int = 512,
         chunk_overlap: int = 100,
-        encoding_name: str = "cl100k_base"
+        encoding_name: str = "cl100k_base",
+        use_markdown_separators: bool = True
     ):
         """
         Initialize document chunker
@@ -42,29 +43,53 @@ class DocumentChunker:
             chunk_size: Target chunk size in tokens (default: 512)
             chunk_overlap: Number of overlapping tokens (default: 100, ~20%)
             encoding_name: Tokenizer encoding (default: cl100k_base for GPT models)
+            use_markdown_separators: Use markdown-aware separators (default: True)
         """
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.encoding_name = encoding_name
+        self.use_markdown_separators = use_markdown_separators
+
+        # Choose separators based on content type
+        if use_markdown_separators:
+            # Markdown-aware separators for Marker output
+            # Prioritized for scientific papers in markdown format:
+            # 1. Section headers (# ## ###) - highest semantic boundaries
+            # 2. Horizontal rules (---) - document sections
+            # 3. Paragraphs (double newline) - main semantic boundaries
+            # 4. Single newline - line breaks
+            # 5. Sentences (period + space) - secondary boundaries
+            # 6. Words (space) - fallback
+            # 7. Characters - last resort
+            separators = [
+                "\n## ",  # H2 headers (sections)
+                "\n### ", # H3 headers (subsections)
+                "\n#### ", # H4 headers
+                "\n---\n", # Horizontal rules
+                "\n\n",   # Paragraphs
+                "\n",     # Line breaks
+                ". ",     # Sentences
+                " ",      # Words
+                ""        # Characters
+            ]
+        else:
+            # Standard separators for plain text (PyMuPDF output)
+            separators = ["\n\n", "\n", ". ", " ", ""]
 
         # Initialize LangChain splitter with token-based counting
         self.splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             encoding_name=encoding_name,
-            # Separators prioritized for scientific papers:
-            # 1. Paragraphs (double newline) - main semantic boundaries
-            # 2. Sentences (period + space) - secondary boundaries
-            # 3. Words (space) - fallback
-            # 4. Characters - last resort
-            separators=["\n\n", "\n", ". ", " ", ""]
+            separators=separators
         )
 
         logger.info(
             f"DocumentChunker initialized: "
             f"chunk_size={chunk_size} tokens, "
             f"overlap={chunk_overlap} tokens ({chunk_overlap/chunk_size*100:.0f}%), "
-            f"encoding={encoding_name}"
+            f"encoding={encoding_name}, "
+            f"markdown_aware={use_markdown_separators}"
         )
 
     def chunk_text(
