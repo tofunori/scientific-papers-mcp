@@ -15,9 +15,10 @@ from ..utils.text_chunker import DocumentChunker
 from .indexing_state import IndexingStateManager
 from .deduplicator import DocumentDeduplicator
 
-# Marker extractors (optional, will be loaded on demand)
+# Marker and LlamaParse extractors (optional, will be loaded on demand)
 MARKER_API_AVAILABLE = False
 MARKER_LOCAL_AVAILABLE = False
+LLAMAPARSE_AVAILABLE = False
 
 try:
     from ..extractors.marker_api_extractor import MarkerAPIExtractor
@@ -30,6 +31,18 @@ try:
     MARKER_LOCAL_AVAILABLE = MarkerLocalExtractor.is_available()
 except ImportError:
     pass
+
+try:
+    from ..extractors.llamaparse_extractor import LlamaParseExtractor
+    LLAMAPARSE_AVAILABLE = LlamaParseExtractor.is_available()
+except ImportError:
+    pass
+
+try:
+    from ..extractors.llamaextract_extractor import LlamaExtractExtractor
+    LLAMAEXTRACT_AVAILABLE = LlamaExtractExtractor.is_available()
+except ImportError:
+    LLAMAEXTRACT_AVAILABLE = False
 
 logger = setup_logger(__name__)
 
@@ -97,8 +110,8 @@ class ZoteroLibraryIndexer:
         self.deduplicator = deduplicator or DocumentDeduplicator()
 
         # Initialize document chunker for splitting papers
-        # Use markdown-aware chunking if using Marker extraction
-        use_markdown = self.pdf_extraction_method in ["marker_api", "marker_local"]
+        # Use markdown-aware chunking if using Marker or LlamaParse extraction
+        use_markdown = self.pdf_extraction_method in ["marker_api", "marker_local", "llamaparse"]
         self.chunker = DocumentChunker(
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
@@ -111,6 +124,8 @@ class ZoteroLibraryIndexer:
         self.pdf_extraction_method = config.pdf_extraction_method
         self.marker_api_extractor = None
         self.marker_local_extractor = None
+        self.llamaparse_extractor = None
+        self.llamaextract_extractor = None
 
         # Initialize Marker API extractor if configured
         if self.pdf_extraction_method == "marker_api" and MARKER_API_AVAILABLE:
@@ -150,6 +165,43 @@ class ZoteroLibraryIndexer:
             except Exception as e:
                 logger.warning(f"Failed to initialize Marker Local: {e}. Falling back to PyMuPDF")
                 self.pdf_extraction_method = "pymupdf"
+
+        # Initialize LlamaParse extractor if configured
+        elif self.pdf_extraction_method == "llamaparse" and LLAMAPARSE_AVAILABLE:
+            if config.llamaparse_api_key:
+                try:
+                    self.llamaparse_extractor = LlamaParseExtractor(
+                        api_key=config.llamaparse_api_key,
+                        result_type=config.llamaparse_result_type,
+                        parsing_instruction=config.llamaparse_parsing_instruction or None,
+                        use_vendor_multimodal=config.llamaparse_use_vendor_multimodal,
+                        invalidate_cache=config.llamaparse_invalidate_cache,
+                        num_workers=config.llamaparse_num_workers,
+                        max_timeout=config.llamaparse_max_timeout,
+                    )
+                    logger.info("LlamaParse extractor initialized")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize LlamaParse: {e}. Falling back to PyMuPDF")
+                    self.pdf_extraction_method = "pymupdf"
+            else:
+                logger.warning("LlamaParse selected but no API key found. Falling back to PyMuPDF")
+                self.pdf_extraction_method = "pymupdf"
+
+        # Initialize LlamaExtract for enhanced metadata extraction (optional, works with any extraction method)
+        if config.llamaextract_enabled and LLAMAEXTRACT_AVAILABLE:
+            # Use same API key as LlamaParse or separate key
+            llamaextract_api_key = config.llamaextract_api_key or config.llamaparse_api_key
+            if llamaextract_api_key:
+                try:
+                    self.llamaextract_extractor = LlamaExtractExtractor(
+                        api_key=llamaextract_api_key,
+                        schema_name=config.llamaextract_schema_name,
+                    )
+                    logger.info("LlamaExtract metadata enhancer initialized")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize LlamaExtract: {e}")
+            else:
+                logger.warning("LlamaExtract enabled but no API key found")
 
         logger.info(f"Zotero library indexer initialized (path: {self.library_path})")
         logger.info(f"PDF extraction method: {self.pdf_extraction_method}")
@@ -284,6 +336,30 @@ class ZoteroLibraryIndexer:
                     else:
                         raise
 
+            # Try LlamaParse extraction
+            elif self.pdf_extraction_method == "llamaparse" and self.llamaparse_extractor:
+                try:
+                    markdown_text, llamaparse_metadata, images = self.llamaparse_extractor.extract_text_from_pdf(
+                        file_path,
+                        extract_images=True,
+                        custom_instruction=None,  # Use default instruction
+                    )
+                    # Extract enhanced metadata from markdown
+                    metadata = self.llamaparse_extractor.extract_metadata_from_markdown(
+                        markdown_text, llamaparse_metadata
+                    )
+                    full_text = markdown_text
+                    is_scanned = llamaparse_metadata.get("is_scanned", False)
+                    logger.debug(f"Successfully extracted with LlamaParse: {len(markdown_text)} chars")
+
+                except Exception as e:
+                    logger.warning(f"LlamaParse failed for {file_path.name}: {e}")
+                    if config.marker_fallback_to_pymupdf:
+                        logger.info(f"Falling back to PyMuPDF for {file_path.name}")
+                        extraction_source = "pymupdf_fallback"
+                    else:
+                        raise
+
             # Use PyMuPDF extraction (default or fallback)
             if not full_text or extraction_source in ["pymupdf", "pymupdf_fallback"]:
                 # Extract PDF metadata
@@ -310,6 +386,24 @@ class ZoteroLibraryIndexer:
                 else:
                     logger.warning(f"No authors found for {file_path.name} - using placeholder")
                     authors = ["Unknown"]  # Placeholder to enable fulltext search
+
+            # Optional: Enhance metadata with LlamaExtract (if enabled)
+            if self.llamaextract_extractor:
+                try:
+                    logger.debug(f"Enhancing metadata with LlamaExtract for {file_path.name}")
+                    enhanced_metadata = self.llamaextract_extractor.extract_with_fallback(
+                        file_path,
+                        fallback_metadata=metadata,
+                        min_confidence=0.5,  # Only use LlamaExtract data if confidence >= 50%
+                    )
+                    metadata = enhanced_metadata
+                    # Update authors from enhanced metadata if available
+                    if "authors" in enhanced_metadata:
+                        authors = enhanced_metadata["authors"]
+                    logger.debug(f"Metadata enhanced with LlamaExtract (confidence: {metadata.get('overall_confidence', 0):.2%})")
+                except Exception as e:
+                    logger.warning(f"LlamaExtract metadata enhancement failed for {file_path.name}: {e}")
+                    # Continue with existing metadata
 
             # Create ZoteroDocument
             doc = ZoteroDocument(

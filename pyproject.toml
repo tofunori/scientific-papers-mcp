@@ -66,6 +66,12 @@ llamaindex = [
     "llama-index-postprocessor-cohere>=0.1.0",
 ]
 
+# LlamaParse + LlamaExtract (PDF parsing and metadata extraction)
+llamaparse = [
+    "llama-parse>=0.4.0",  # GenAI-native PDF parsing ($0.003/page, 7k free/week)
+    "llama-extract>=0.1.0",  # Structured metadata extraction
+]
+
 # Testing and comparison tools
 testing = [
     "rich>=13.0.0",  # Pretty CLI output for test_marker_comparison.py
@@ -76,7 +82,7 @@ dev-all = [
 ]
 
 all = [
-    "scientific-papers-mcp[marker-local,llamaindex,testing]",
+    "scientific-papers-mcp[marker-local,llamaindex,llamaparse,testing]",
 ]
 
 [tool.setuptools]

@@ -113,9 +113,10 @@ class Config(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
-    # PDF Extraction with Marker (API + Local support)
+    # PDF Extraction with Marker (API + Local support) and LlamaParse
     # Marker provides superior extraction for scientific papers with tables/equations
-    pdf_extraction_method: str = "pymupdf"  # Options: "pymupdf", "marker_api", "marker_local"
+    # LlamaParse offers GenAI-native parsing with natural language instructions
+    pdf_extraction_method: str = "pymupdf"  # Options: "pymupdf", "marker_api", "marker_local", "llamaparse"
 
     # Marker API settings
     marker_api_key: str = ""  # Datalab Marker API key ($5 free credits)
@@ -152,6 +153,23 @@ class Config(BaseSettings):
 
     # Fallback strategy
     marker_fallback_to_pymupdf: bool = True  # Fallback to PyMuPDF if Marker fails
+
+    # LlamaParse settings (GenAI-native PDF parsing with natural language instructions)
+    # Cost: $0.003/page with 7,000 free pages per week
+    # API: https://cloud.llamaindex.ai/
+    llamaparse_api_key: str = ""  # LlamaCloud API key (from LLAMA_CLOUD_API_KEY env var)
+    llamaparse_result_type: str = "markdown"  # Output format: "markdown" or "text"
+    llamaparse_parsing_instruction: str = ""  # Custom parsing instructions (optional)
+    llamaparse_use_vendor_multimodal: bool = False  # Use vendor multimodal models (more expensive)
+    llamaparse_num_workers: int = 4  # Number of parallel workers
+    llamaparse_max_timeout: int = 2000  # Maximum timeout in seconds
+    llamaparse_invalidate_cache: bool = False  # Force re-parsing (ignore cache)
+
+    # LlamaExtract settings (Structured extraction API)
+    # Extract structured metadata from PDFs with confidence scores
+    llamaextract_api_key: str = ""  # LlamaCloud API key (same as LlamaParse)
+    llamaextract_enabled: bool = False  # Enable structured metadata extraction
+    llamaextract_schema_name: str = "scientific_paper"  # Extraction schema to use
 
     model_config = ConfigDict(
         env_file=".env",

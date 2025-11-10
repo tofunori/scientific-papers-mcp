@@ -4,6 +4,7 @@ Test script to compare PDF extraction methods:
 - PyMuPDF (fast, lightweight)
 - Marker API (high quality, cloud)
 - Marker Local (high quality, local)
+- LlamaParse (GenAI-native, affordable)
 
 Usage:
     python test_marker_comparison.py path/to/paper.pdf [--all]
@@ -163,6 +164,69 @@ def test_marker_local(pdf_path: Path) -> Dict:
         }
 
 
+def test_llamaparse(pdf_path: Path) -> Dict:
+    """Test LlamaParse extraction"""
+    console.print("\n[bold magenta]Testing LlamaParse...[/bold magenta]")
+
+    # Check if API key is configured
+    from src.config import config
+
+    if not config.llamaparse_api_key:
+        return {
+            "method": "LlamaParse",
+            "success": False,
+            "error": "No API key configured. Set LLAMA_CLOUD_API_KEY in .env"
+        }
+
+    start_time = time.time()
+
+    try:
+        from src.extractors.llamaparse_extractor import LlamaParseExtractor
+
+        if not LlamaParseExtractor.is_available():
+            return {
+                "method": "LlamaParse",
+                "success": False,
+                "error": "llama-parse not installed. Install with: pip install llama-parse"
+            }
+
+        extractor = LlamaParseExtractor(
+            api_key=config.llamaparse_api_key,
+            result_type=config.llamaparse_result_type,
+        )
+
+        markdown_text, metadata, images = extractor.extract_text_from_pdf(
+            pdf_path,
+            extract_images=True
+        )
+
+        elapsed = time.time() - start_time
+
+        # Extract enhanced metadata
+        enhanced_metadata = extractor.extract_metadata_from_markdown(markdown_text, metadata)
+
+        return {
+            "method": "LlamaParse",
+            "success": True,
+            "elapsed_time": elapsed,
+            "text_length": len(markdown_text),
+            "num_images": len(images),
+            "is_scanned": metadata.get("is_scanned", False),
+            "metadata": enhanced_metadata,
+            "text_preview": markdown_text[:500],
+            "is_markdown": True,
+            "error": None
+        }
+    except Exception as e:
+        elapsed = time.time() - start_time
+        return {
+            "method": "LlamaParse",
+            "success": False,
+            "elapsed_time": elapsed,
+            "error": str(e)
+        }
+
+
 def display_results(results: List[Dict]):
     """Display comparison results in a nice table"""
 
@@ -254,7 +318,7 @@ def display_results(results: List[Dict]):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compare PDF extraction methods: PyMuPDF vs Marker API vs Marker Local"
+        description="Compare PDF extraction methods: PyMuPDF vs Marker API vs Marker Local vs LlamaParse"
     )
     parser.add_argument(
         "pdf_path",
@@ -265,7 +329,7 @@ def main():
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Test all methods (default: PyMuPDF + Marker API)"
+        help="Test all methods (default: PyMuPDF + Marker API + LlamaParse)"
     )
     parser.add_argument(
         "--no-llm",
@@ -306,13 +370,19 @@ def main():
     # Test PyMuPDF (always)
     results.append(test_pymupdf(pdf_path))
 
-    # Test Marker API (default)
-    if args.all or not args.all:  # Test by default unless --all is used
+    # Test Marker API (default, unless --all)
+    if not args.all:
         results.append(test_marker_api(pdf_path, use_llm=not args.no_llm))
 
-    # Test Marker Local (only with --all)
+    # Test LlamaParse (default, unless --all)
+    if not args.all:
+        results.append(test_llamaparse(pdf_path))
+
+    # Test all methods with --all flag
     if args.all:
+        results.append(test_marker_api(pdf_path, use_llm=not args.no_llm))
         results.append(test_marker_local(pdf_path))
+        results.append(test_llamaparse(pdf_path))
 
     # Display results
     display_results(results)
