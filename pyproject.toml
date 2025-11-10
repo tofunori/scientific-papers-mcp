@@ -58,6 +58,14 @@ marker-local = [
     "marker-pdf>=1.0.0",
 ]
 
+# LlamaIndex integration (advanced RAG features via MCP API)
+llamaindex = [
+    "llama-index>=0.10.0",
+    "llama-index-vector-stores-chroma>=0.1.0",
+    "llama-index-embeddings-voyageai>=0.1.0",
+    "llama-index-postprocessor-cohere>=0.1.0",
+]
+
 # Testing and comparison tools
 testing = [
     "rich>=13.0.0",  # Pretty CLI output for test_marker_comparison.py
@@ -68,7 +76,7 @@ dev-all = [
 ]
 
 all = [
-    "scientific-papers-mcp[marker-local,testing]",
+    "scientific-papers-mcp[marker-local,llamaindex,testing]",
 ]
 
 [tool.setuptools]

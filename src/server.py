@@ -17,6 +17,14 @@ from .indexing.zotero_indexer import ZoteroLibraryIndexer
 from .indexing.indexing_state import IndexingStateManager
 from .indexing.deduplicator import DocumentDeduplicator
 
+# Try to import LlamaIndex query engine (optional)
+LLAMAINDEX_AVAILABLE = False
+try:
+    from .query.llama_query_engine import LlamaIndexQueryEngine
+    LLAMAINDEX_AVAILABLE = LlamaIndexQueryEngine.is_available()
+except ImportError:
+    pass
+
 # Setup logging
 logger = setup_logger(__name__, level=config.log_level)
 
@@ -41,13 +49,14 @@ mcp = FastMCP(
     """,
 )
 
-# Global search engine instance
+# Global search engine instances
 search_engine: Optional[HybridSearchEngine] = None
+llama_query_engine: Optional[Any] = None  # LlamaIndexQueryEngine (optional)
 
 
 def initialize_server() -> None:
     """Initialize the MCP server and search engine"""
-    global search_engine
+    global search_engine, llama_query_engine
 
     try:
         logger.info("Initializing Scientific Papers MCP Server")
@@ -64,6 +73,34 @@ def initialize_server() -> None:
 
         # Initialize search engine
         search_engine = HybridSearchEngine(collection, config.embedding_model)
+
+        # Initialize LlamaIndex query engine (optional)
+        if LLAMAINDEX_AVAILABLE and config.use_voyage_api and config.voyage_api_key:
+            try:
+                logger.info("Initializing LlamaIndex query engine...")
+                from .indexing.chroma_client import get_chroma_client
+
+                chroma_client = get_chroma_client(config.chroma_path)
+
+                llama_query_engine = LlamaIndexQueryEngine(
+                    chroma_client=chroma_client,
+                    collection_name=config.default_collection_name,
+                    voyage_api_key=config.voyage_api_key,
+                    voyage_model=config.voyage_text_model,
+                    cohere_api_key=config.cohere_api_key if config.use_cohere_rerank else None,
+                    cohere_model=config.cohere_model,
+                    similarity_top_k=config.reranker_top_k,
+                    rerank_top_n=config.cohere_top_k,
+                )
+                logger.info("LlamaIndex query engine initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize LlamaIndex query engine: {e}")
+                llama_query_engine = None
+        else:
+            if not LLAMAINDEX_AVAILABLE:
+                logger.info("LlamaIndex not available. Install with: pip install llama-index llama-index-vector-stores-chroma llama-index-embeddings-voyageai")
+            else:
+                logger.info("LlamaIndex query engine disabled (Voyage API not configured)")
 
         logger.info("Server initialized successfully")
 
@@ -789,6 +826,154 @@ def get_collection_stats() -> Dict:
         }
     except Exception as e:
         logger.error(f"Stats error: {e}")
+        return {"error": str(e)}
+
+
+# ============================================================================
+# LlamaIndex Advanced Query Tools (Optional)
+# ============================================================================
+
+
+@mcp.tool()
+def llama_query(
+    question: str,
+    use_sub_questions: bool = False,
+) -> Dict:
+    """
+    Advanced query using LlamaIndex with citation tracking
+
+    Uses LlamaIndex for sophisticated queries with:
+    - Precise citation tracking
+    - Source node metadata
+    - Optional sub-question decomposition for complex queries
+
+    Args:
+        question: Your research question
+        use_sub_questions: Decompose complex questions into sub-questions (slower but better for complex queries)
+
+    Returns:
+        Answer with detailed source citations
+
+    Example:
+        llama_query("How do glacier monitoring techniques compare between 2020 and 2024?", use_sub_questions=True)
+
+    Requires:
+        - LlamaIndex installed (pip install llama-index llama-index-vector-stores-chroma llama-index-embeddings-voyageai)
+        - Voyage API configured
+    """
+    if not llama_query_engine:
+        return {
+            "error": "LlamaIndex query engine not available",
+            "hint": "Install with: pip install llama-index llama-index-vector-stores-chroma llama-index-embeddings-voyageai llama-index-postprocessor-cohere"
+        }
+
+    try:
+        result = llama_query_engine.query(
+            question=question,
+            use_sub_questions=use_sub_questions,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"LlamaIndex query error: {e}")
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def llama_compare_papers(
+    paper_titles: List[str],
+    comparison_aspect: str = "methodology",
+) -> Dict:
+    """
+    Compare multiple papers using LlamaIndex
+
+    Performs intelligent multi-document comparison with:
+    - Automatic sub-question generation
+    - Cross-document analysis
+    - Similarity and difference highlighting
+
+    Args:
+        paper_titles: List of 2-5 paper titles or DOIs to compare
+        comparison_aspect: What to compare (e.g., "methodology", "results", "datasets", "conclusions")
+
+    Returns:
+        Detailed comparison with citations from each paper
+
+    Example:
+        llama_compare_papers(
+            ["Smith et al. 2023", "Doe et al. 2024"],
+            comparison_aspect="machine learning approaches"
+        )
+
+    Requires:
+        - LlamaIndex installed and configured
+    """
+    if not llama_query_engine:
+        return {
+            "error": "LlamaIndex query engine not available",
+            "hint": "Install with: pip install llama-index llama-index-vector-stores-chroma llama-index-embeddings-voyageai"
+        }
+
+    if len(paper_titles) < 2:
+        return {"error": "Need at least 2 papers to compare"}
+
+    if len(paper_titles) > 5:
+        return {"error": "Maximum 5 papers for comparison"}
+
+    try:
+        result = llama_query_engine.compare_papers(
+            paper_titles_or_dois=paper_titles,
+            comparison_aspect=comparison_aspect,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"LlamaIndex comparison error: {e}")
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def llama_find_related(
+    paper_title: str,
+    top_k: int = 5,
+) -> Dict:
+    """
+    Find papers related to a given paper using LlamaIndex
+
+    Uses semantic similarity and content analysis to find:
+    - Papers with similar methods
+    - Papers addressing similar research questions
+    - Papers with comparable findings
+    - Papers citing similar work
+
+    Args:
+        paper_title: Title or DOI of reference paper
+        top_k: Number of related papers to return (1-10)
+
+    Returns:
+        List of related papers with similarity scores and excerpts
+
+    Example:
+        llama_find_related("Deep Learning for Glacier Monitoring", top_k=5)
+
+    Requires:
+        - LlamaIndex installed and configured
+    """
+    if not llama_query_engine:
+        return {
+            "error": "LlamaIndex query engine not available",
+            "hint": "Install with: pip install llama-index llama-index-vector-stores-chroma llama-index-embeddings-voyageai"
+        }
+
+    if top_k < 1 or top_k > 10:
+        return {"error": "top_k must be between 1 and 10"}
+
+    try:
+        result = llama_query_engine.find_related_papers(
+            paper_title_or_doi=paper_title,
+            top_k=top_k,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"LlamaIndex related papers error: {e}")
         return {"error": str(e)}
 
 
