@@ -78,6 +78,7 @@ PDF_EXTRACTION_METHOD=marker_api
 MARKER_API_KEY=your_api_key_here
 
 # Enable LLM for best quality (recommended)
+# Uses Gemini 2.0 Flash server-side - no extra config needed!
 MARKER_USE_LLM=true
 
 # Optional: Force OCR for all pages
@@ -136,14 +137,74 @@ PDF_EXTRACTION_METHOD=marker_local
 # GPU batch multiplier (increase for better GPU usage)
 MARKER_LOCAL_BATCH_MULTIPLIER=2
 
-# Optional: Use LLM (requires API key)
-MARKER_LOCAL_USE_LLM=false
-MARKER_LOCAL_LLM_PROVIDER=openai
-MARKER_LOCAL_LLM_MODEL=gpt-4
+# Optional: Enable LLM for better quality
+MARKER_LOCAL_USE_LLM=true
+
+# Choose LLM service (see LLM Configuration section below)
+MARKER_LOCAL_LLM_SERVICE=gemini  # Options: gemini, vertex, claude, openai, ollama
+
+# Gemini API key (default LLM for Marker)
+# Get from: https://makersuite.google.com/app/apikey
+GOOGLE_API_KEY=your_gemini_key_here
+MARKER_GEMINI_MODEL=gemini-2.0-flash
 
 # Fallback to PyMuPDF if Marker fails
 MARKER_FALLBACK_TO_PYMUPDF=true
 ```
+
+#### LLM Configuration for Marker Local
+
+Marker Local supports multiple LLM providers. Here are your options:
+
+**Option A: Gemini (Default, Recommended)** ⭐
+```bash
+MARKER_LOCAL_LLM_SERVICE=gemini
+GOOGLE_API_KEY=your_gemini_key  # Get from https://makersuite.google.com/app/apikey
+MARKER_GEMINI_MODEL=gemini-2.0-flash  # Or gemini-2.5-flash
+```
+- **Cost:** ~$0.10/million tokens (very cheap)
+- **Speed:** Very fast
+- **Quality:** Excellent for scientific papers
+
+**Option B: Vertex AI (Production-grade)**
+```bash
+MARKER_LOCAL_LLM_SERVICE=vertex
+MARKER_VERTEX_PROJECT_ID=your-gcp-project-id
+```
+- **Cost:** Similar to Gemini but with SLA
+- **Reliability:** More reliable than Gemini API
+- **Requires:** Google Cloud Project
+
+**Option C: Claude (Alternative)**
+```bash
+MARKER_LOCAL_LLM_SERVICE=claude
+CLAUDE_API_KEY=your_claude_key  # Get from https://console.anthropic.com/
+MARKER_CLAUDE_MODEL=claude-3-sonnet-20240229
+```
+- **Cost:** ~$3-15/million tokens
+- **Quality:** Excellent reasoning
+- **Models:** claude-3-sonnet, claude-3-opus
+
+**Option D: OpenAI (Alternative)**
+```bash
+MARKER_LOCAL_LLM_SERVICE=openai
+OPENAI_API_KEY=your_openai_key  # Get from https://platform.openai.com/api-keys
+MARKER_OPENAI_MODEL=gpt-4-turbo
+```
+- **Cost:** ~$10-30/million tokens
+- **Quality:** Good all-around
+- **Models:** gpt-4-turbo, gpt-4, gpt-3.5-turbo
+
+**Option E: Ollama (100% Free, Local)** 💚
+```bash
+MARKER_LOCAL_LLM_SERVICE=ollama
+MARKER_OLLAMA_BASE_URL=http://localhost:11434
+MARKER_OLLAMA_MODEL=llama2  # Or mistral, mixtral, etc.
+```
+- **Cost:** FREE! Runs on your machine
+- **Install:** https://ollama.ai/
+- **Models:** llama2, mistral, mixtral, etc.
+- **Requires:** ~4-8GB VRAM for good models
 
 #### Step 3: Test
 

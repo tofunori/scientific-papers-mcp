@@ -18,6 +18,13 @@ class MarkerAPIExtractor:
     - Complex tables (including multi-page tables)
     - Hierarchical document structure
 
+    LLM Enhancement (use_llm=True):
+    - Uses Gemini 2.0 Flash by default (server-side, no extra config needed)
+    - Merges tables across pages
+    - Handles inline math better
+    - Formats tables properly
+    - Extracts values from forms
+
     API Documentation: https://documentation.datalab.to/docs/welcome/api
     """
 

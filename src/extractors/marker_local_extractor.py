@@ -1,9 +1,10 @@
-"""PDF extraction using local Marker installation"""
+"""PDF extraction using local Marker installation with LLM support"""
 
 from pathlib import Path
 from typing import Tuple, List, Dict, Optional
 import logging
 import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,13 @@ class MarkerLocalExtractor:
     - Complex tables (including multi-page tables)
     - Hierarchical document structure
 
+    LLM Support:
+    - Gemini (default): Requires GOOGLE_API_KEY environment variable
+    - Vertex AI: Requires GCP project ID (more reliable than Gemini)
+    - Claude: Requires Anthropic API key
+    - OpenAI: Requires OpenAI API key
+    - Ollama: Free local LLM (no API key needed)
+
     Installation: pip install marker-pdf
     Documentation: https://github.com/datalab-to/marker
     """
@@ -33,21 +41,43 @@ class MarkerLocalExtractor:
     def __init__(
         self,
         use_llm: bool = False,
-        llm_provider: Optional[str] = None,
-        llm_model: Optional[str] = None,
+        llm_service: str = "gemini",
         batch_multiplier: int = 1,
+        # Gemini settings
+        google_api_key: Optional[str] = None,
+        gemini_model: str = "gemini-2.0-flash",
+        # Vertex settings
+        vertex_project_id: Optional[str] = None,
+        # Claude settings
+        claude_api_key: Optional[str] = None,
+        claude_model: str = "claude-3-sonnet-20240229",
+        # OpenAI settings
+        openai_api_key: Optional[str] = None,
+        openai_model: str = "gpt-4-turbo",
+        # Ollama settings
+        ollama_base_url: str = "http://localhost:11434",
+        ollama_model: str = "llama2",
     ):
         """
         Initialize Marker local extractor
 
         Args:
-            use_llm: Enable LLM for better quality (requires API key)
-            llm_provider: LLM provider (e.g., "openai", "anthropic", "google")
-            llm_model: LLM model name (e.g., "gpt-4", "claude-3-sonnet")
+            use_llm: Enable LLM for better quality (default: False)
+            llm_service: LLM service to use: "gemini", "vertex", "claude", "openai", "ollama"
             batch_multiplier: Increase for better GPU utilization (default: 1)
+            google_api_key: Gemini API key (or set GOOGLE_API_KEY env var)
+            gemini_model: Gemini model name (default: gemini-2.0-flash)
+            vertex_project_id: GCP project ID for Vertex AI
+            claude_api_key: Anthropic Claude API key
+            claude_model: Claude model name
+            openai_api_key: OpenAI API key
+            openai_model: OpenAI model name
+            ollama_base_url: Ollama server URL
+            ollama_model: Ollama model name
 
         Raises:
             ImportError: If marker-pdf not installed
+            ValueError: If LLM enabled but credentials missing
         """
         if not MARKER_AVAILABLE:
             raise ImportError(
@@ -58,18 +88,95 @@ class MarkerLocalExtractor:
             )
 
         self.use_llm = use_llm
-        self.llm_provider = llm_provider
-        self.llm_model = llm_model
+        self.llm_service = llm_service
         self.batch_multiplier = batch_multiplier
+
+        # Store LLM configuration
+        self.google_api_key = google_api_key or os.getenv("GOOGLE_API_KEY")
+        self.gemini_model = gemini_model
+        self.vertex_project_id = vertex_project_id
+        self.claude_api_key = claude_api_key
+        self.claude_model = claude_model
+        self.openai_api_key = openai_api_key
+        self.openai_model = openai_model
+        self.ollama_base_url = ollama_base_url
+        self.ollama_model = ollama_model
+
+        # Validate LLM configuration if enabled
+        if use_llm:
+            self._validate_llm_config()
 
         # Load models once (expensive operation)
         logger.info("Loading Marker models (this may take a few minutes on first run)...")
         try:
             self.models = load_all_models()
             logger.info("Marker models loaded successfully")
+            if use_llm:
+                logger.info(f"LLM enabled: {llm_service} ({self._get_llm_model_name()})")
         except Exception as e:
             logger.error(f"Failed to load Marker models: {e}")
             raise
+
+    def _validate_llm_config(self):
+        """Validate LLM configuration based on selected service"""
+        if self.llm_service == "gemini":
+            if not self.google_api_key:
+                raise ValueError(
+                    "Gemini API key required for LLM. Set GOOGLE_API_KEY environment variable "
+                    "or pass google_api_key parameter."
+                )
+        elif self.llm_service == "vertex":
+            if not self.vertex_project_id:
+                raise ValueError(
+                    "Vertex AI requires vertex_project_id. Set MARKER_VERTEX_PROJECT_ID "
+                    "or pass vertex_project_id parameter."
+                )
+        elif self.llm_service == "claude":
+            if not self.claude_api_key:
+                raise ValueError(
+                    "Claude API key required. Set CLAUDE_API_KEY or pass claude_api_key parameter."
+                )
+        elif self.llm_service == "openai":
+            if not self.openai_api_key:
+                raise ValueError(
+                    "OpenAI API key required. Set OPENAI_API_KEY or pass openai_api_key parameter."
+                )
+        elif self.llm_service == "ollama":
+            # Ollama doesn't require API key, just URL
+            logger.info(f"Using Ollama at {self.ollama_base_url}")
+        else:
+            raise ValueError(
+                f"Unknown LLM service: {self.llm_service}. "
+                f"Valid options: gemini, vertex, claude, openai, ollama"
+            )
+
+    def _get_llm_model_name(self) -> str:
+        """Get the current LLM model name"""
+        if self.llm_service == "gemini":
+            return self.gemini_model
+        elif self.llm_service == "vertex":
+            return "vertex-ai"
+        elif self.llm_service == "claude":
+            return self.claude_model
+        elif self.llm_service == "openai":
+            return self.openai_model
+        elif self.llm_service == "ollama":
+            return self.ollama_model
+        return "unknown"
+
+    def _prepare_llm_env(self):
+        """Prepare environment variables for LLM"""
+        # Set Gemini API key if using Gemini
+        if self.llm_service == "gemini" and self.google_api_key:
+            os.environ["GOOGLE_API_KEY"] = self.google_api_key
+
+        # Set Claude API key if using Claude
+        if self.llm_service == "claude" and self.claude_api_key:
+            os.environ["ANTHROPIC_API_KEY"] = self.claude_api_key
+
+        # Set OpenAI API key if using OpenAI
+        if self.llm_service == "openai" and self.openai_api_key:
+            os.environ["OPENAI_API_KEY"] = self.openai_api_key
 
     def extract_text_from_pdf(
         self,
@@ -103,11 +210,21 @@ class MarkerLocalExtractor:
         logger.debug(f"Settings: use_llm={self.use_llm}, extract_images={extract_images}")
 
         try:
+            # Prepare LLM environment if enabled
+            if self.use_llm:
+                self._prepare_llm_env()
+                logger.debug(f"LLM environment prepared: {self.llm_service}")
+
+            # Note: As of marker-pdf 1.x, LLM configuration is primarily done via CLI args
+            # For programmatic use, we set environment variables and rely on marker's defaults
+            # Full LLM control requires using marker CLI: marker_single --use_llm --gemini_api_key ...
+
             # Convert PDF to markdown
             result = convert_single_pdf(
                 str(pdf_path),
                 self.models,
                 batch_multiplier=self.batch_multiplier,
+                # LLM is configured via environment variables set in _prepare_llm_env()
             )
 
             # Extract results

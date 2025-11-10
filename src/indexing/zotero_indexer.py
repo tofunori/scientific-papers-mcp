@@ -129,9 +129,22 @@ class ZoteroLibraryIndexer:
             try:
                 self.marker_local_extractor = MarkerLocalExtractor(
                     use_llm=config.marker_local_use_llm,
-                    llm_provider=config.marker_local_llm_provider or None,
-                    llm_model=config.marker_local_llm_model or None,
+                    llm_service=config.marker_local_llm_service,
                     batch_multiplier=config.marker_local_batch_multiplier,
+                    # Gemini settings (default LLM for Marker)
+                    google_api_key=config.google_api_key or None,
+                    gemini_model=config.marker_gemini_model,
+                    # Vertex AI settings
+                    vertex_project_id=config.marker_vertex_project_id or None,
+                    # Claude settings
+                    claude_api_key=config.claude_api_key or None,
+                    claude_model=config.marker_claude_model,
+                    # OpenAI settings
+                    openai_api_key=config.openai_api_key or None,
+                    openai_model=config.marker_openai_model,
+                    # Ollama settings (local LLM, free)
+                    ollama_base_url=config.marker_ollama_base_url,
+                    ollama_model=config.marker_ollama_model,
                 )
                 logger.info("Marker Local extractor initialized")
             except Exception as e:

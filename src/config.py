@@ -126,8 +126,29 @@ class Config(BaseSettings):
     # Marker Local settings (requires: pip install marker-pdf)
     marker_local_batch_multiplier: int = 1  # GPU batch multiplier (increase for better GPU usage)
     marker_local_use_llm: bool = False  # Use LLM with local Marker (requires LLM API key)
-    marker_local_llm_provider: str = ""  # LLM provider: "openai", "anthropic", "google"
-    marker_local_llm_model: str = ""  # LLM model name (e.g., "gpt-4", "claude-3-sonnet")
+
+    # Marker Local LLM configuration
+    # LLM service: "gemini" (default), "vertex", "claude", "openai", "ollama"
+    marker_local_llm_service: str = "gemini"
+
+    # Gemini settings (default for Marker --use_llm)
+    google_api_key: str = ""  # Gemini API key (from GOOGLE_API_KEY env var)
+    marker_gemini_model: str = "gemini-2.0-flash"  # Gemini model name
+
+    # Google Vertex AI settings (alternative to Gemini, more reliable)
+    marker_vertex_project_id: str = ""  # GCP project ID
+
+    # Claude settings (alternative LLM)
+    claude_api_key: str = ""  # Anthropic Claude API key
+    marker_claude_model: str = "claude-3-sonnet-20240229"  # Claude model
+
+    # OpenAI settings (alternative LLM)
+    openai_api_key: str = ""  # OpenAI API key
+    marker_openai_model: str = "gpt-4-turbo"  # OpenAI model
+
+    # Ollama settings (local LLM, free)
+    marker_ollama_base_url: str = "http://localhost:11434"  # Ollama server URL
+    marker_ollama_model: str = "llama2"  # Ollama model name
 
     # Fallback strategy
     marker_fallback_to_pymupdf: bool = True  # Fallback to PyMuPDF if Marker fails
